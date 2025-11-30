@@ -10,6 +10,8 @@ import ForgotPasswordForm from './components/auth/ForgotPassword';
 import ResetPasswordForm from './components/auth/ResetPassword';
 import PortalLayout from './layout/PortalLayout';
 import StudentsManagement from './components/portal/Students/StudentsManagement';
+import SubjectsManagement from './components/portal/Subjects/SubjectsManagement';
+import MonthlyDataManagement from './components/portal/MonthlyData/MonthlyDataManagement';
 
 function App() {
   const isAuthed = true; // TODO: replace with real auth state
@@ -56,10 +58,13 @@ function App() {
             path={routes.portal.student}
             element={<StudentsManagement />}
           />
-          <Route path={routes.portal.subjects} element={<div>Subjects</div>} />
+          <Route
+            path={routes.portal.subjects}
+            element={<SubjectsManagement />}
+          />
           <Route
             path={routes.portal.monthlyData}
-            element={<div>Monthly Data</div>}
+            element={<MonthlyDataManagement />}
           />
           <Route path={routes.portal.reports} element={<div>Reports</div>} />
           <Route path={routes.portal.settings} element={<div>Settings</div>} />

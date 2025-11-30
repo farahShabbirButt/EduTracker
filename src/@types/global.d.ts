@@ -1,4 +1,4 @@
-export type Grade =
+export type ClassLevel =
   | 'Nursery'
   | 'KG'
   | '1'
@@ -10,4 +10,11 @@ export type Grade =
   | '7'
   | '8'
   | '9'
-  | '10';
+  | '10'
+  | '11'
+  | '12';
+
+export enum SubjectType {
+  ELECTIVE = 'ELECTIVE',
+  COMPULSORY = 'COMPULSORY',
+}

@@ -1,5 +1,15 @@
+import { SubjectType } from '../@types/global.d';
+import type {
+  ITest,
+  ITestMarkEntry,
+  ITestSubjectConfig,
+} from '../components/portal/MonthlyData/@types/testData';
 import type { Student } from '../components/portal/Students/@types/student.d';
-export const Grades = [
+import type {
+  GradeBoundary,
+  Subject,
+} from '../components/portal/Subjects/@types/subject.d';
+export const ClassLevels = [
   'Nursery',
   'KG',
   '1',
@@ -12,6 +22,8 @@ export const Grades = [
   '8',
   '9',
   '10',
+  '11',
+  '12',
 ];
 export const ResultSampleData = {
   studentInfo: {
@@ -186,5 +198,126 @@ export const StudentsSampleData: Student[] = [
     phone: '0301-9876543',
     email: 'ali.raza@example.com',
     subjectsAssigned: [],
+  },
+];
+const uid = () => Math.random().toString(36).slice(2);
+export const SubjectsList: Subject[] = [
+  {
+    id: uid(),
+    name: 'Math',
+    defaultMaxMarks: 100,
+    grades: ['9', '10'],
+    subjectType: SubjectType.COMPULSORY,
+  },
+  {
+    id: uid(),
+    name: 'English',
+    defaultMaxMarks: 100,
+    grades: ['9'],
+    subjectType: SubjectType.COMPULSORY,
+  },
+  {
+    id: uid(),
+    name: 'Urdu',
+    defaultMaxMarks: 100,
+    grades: ['9'],
+    subjectType: SubjectType.COMPULSORY,
+  },
+  {
+    id: uid(),
+    name: 'Pak Studies',
+    defaultMaxMarks: 100,
+    grades: ['9'],
+    subjectType: SubjectType.COMPULSORY,
+  },
+  {
+    id: uid(),
+    name: 'Computer',
+    defaultMaxMarks: 100,
+    grades: ['9'],
+    subjectType: SubjectType.ELECTIVE,
+  },
+  {
+    id: uid(),
+    name: 'Biology',
+    defaultMaxMarks: 100,
+    grades: ['9'],
+    subjectType: SubjectType.ELECTIVE,
+  },
+  {
+    id: uid(),
+    name: 'Maths',
+    defaultMaxMarks: 100,
+    grades: ['9'],
+    subjectType: SubjectType.ELECTIVE,
+  },
+  {
+    id: uid(),
+    name: 'Islamiat',
+    defaultMaxMarks: 100,
+    grades: ['9'],
+    subjectType: SubjectType.COMPULSORY,
+  },
+  {
+    id: uid(),
+    name: 'Physics',
+    defaultMaxMarks: 100,
+    grades: ['9'],
+    subjectType: SubjectType.ELECTIVE,
+  },
+];
+export const GradesList: GradeBoundary[] = [
+  { label: 'A+', min: 90 },
+  { label: 'A', min: 80 },
+  { label: 'B+', min: 70 },
+  { label: 'B', min: 60 },
+  { label: 'C', min: 50 },
+  { label: 'D', min: 40 },
+  { label: 'F', min: 0 },
+];
+
+// test Data constants
+export const MonthList = [
+  { value: 1, label: 'January' },
+  { value: 2, label: 'February' },
+  { value: 3, label: 'March' },
+  { value: 4, label: 'April' },
+  { value: 5, label: 'May' },
+  { value: 6, label: 'June' },
+  { value: 7, label: 'July' },
+  { value: 8, label: 'August' },
+  { value: 9, label: 'September' },
+  { value: 10, label: 'October' },
+  { value: 11, label: 'November' },
+  { value: 12, label: 'December' },
+];
+
+export const DummyTests: ITest[] = [
+  {
+    id: uid(),
+    testName: 'Test 1',
+    month: 2,
+    year: 2025,
+    classLevel: '9',
+    createdAt: new Date().toISOString(),
+  },
+];
+
+export const DummyTestSubjectConfig: ITestSubjectConfig[] = [
+  {
+    testId: DummyTests[0].id,
+    subjectId: 'math',
+    maxMarks: 100,
+  },
+];
+
+export const DummyTestMarks: ITestMarkEntry[] = [
+  {
+    id: uid(),
+    testId: DummyTests[0].id,
+    studentId: 's-001',
+    subjectId: 'math',
+    obtainedMarks: 54,
+    maxMarks: 100,
   },
 ];

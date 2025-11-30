@@ -219,6 +219,14 @@ const createEducationTrackerTheme = (isDarkMode = false) => {
               backgroundColor: '#6b21a8',
             },
           },
+          containedSecondary: {
+            backgroundColor: '#f3f4f6',
+            color: '#000000',
+            '&:hover': {
+              backgroundColor: '#e5e7eb',
+            },
+          },
+
           outlinedPrimary: {
             borderColor: '#822cd3',
             color: '#822cd3',

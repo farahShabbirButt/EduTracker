@@ -8,14 +8,17 @@ import {
   Chip,
   Stack,
   InputAdornment,
-  Grid,
+  Card,
+  CardHeader,
+  Divider,
+  CardContent,
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 
-import type { Grade } from '../../../@types/global.d';
+import type { ClassLevel } from '../../../@types/global.d';
 import type { Student, StudentFormValues } from './@types/student.d';
-import { Grades, StudentsSampleData } from '../../../config/constants';
+import { ClassLevels, StudentsSampleData } from '../../../config/constants';
 import StudentModal from './Partials/StudentModal';
 import DeleteDialog from '../../../common/Dialogs/DeleteDialog/DeleteDialog';
 import { useMemo, useState } from 'react';
@@ -41,7 +44,7 @@ const StudentsManagement = () => {
 
   // filters
   const [search, setSearch] = useState('');
-  const [gradeFilter, setGradeFilter] = useState<Grade | 'All'>('All');
+  const [gradeFilter, setGradeFilter] = useState<ClassLevel | 'All'>('All');
 
   // derived rows based on filters
   const filtered = useMemo(() => {
@@ -132,7 +135,7 @@ const StudentsManagement = () => {
       },
       {
         field: 'grade',
-        headerName: 'Grade',
+        headerName: 'ClassLevel',
         width: 110,
       },
       {
@@ -218,17 +221,17 @@ const StudentsManagement = () => {
       sx={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 3 }}
     >
       {/* Header Section */}
-      <Grid container alignItems="center" spacing={2} mb={2}>
-        <Grid size={{ xs: 12, md: 9 }}>
-          <Typography variant="h3" mb={0.5}>
-            Students Management
-          </Typography>
-          <Typography variant="body1" color="text.primary">
-            Create, edit and manage student records
-          </Typography>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 3 }} display={'flex'} justifyContent={'end'}>
+      <Card>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={2}
+          alignItems="center"
+          justifyContent="space-between"
+        >
+          <CardHeader
+            title="Students Management"
+            subheader="Create, edit and manage student records"
+          />
           <Button
             variant="contained"
             color="primary"
@@ -237,44 +240,48 @@ const StudentsManagement = () => {
           >
             Add Student
           </Button>
-        </Grid>
-      </Grid>
-
-      {/* Actions / Filters */}
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={1.5}
-        sx={{ mb: 2 }}
-      >
-        <TextField
-          placeholder="Search name, father name, roll #, phone, email"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          fullWidth
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <TextField
-          select
-          label="Grade"
-          value={gradeFilter}
-          onChange={(e) => setGradeFilter(e.target.value as Grade | 'All')}
-          sx={{ width: { xs: '100%', sm: 180 } }}
-        >
-          <MenuItem value="All">All</MenuItem>
-          {Grades.map((g) => (
-            <MenuItem key={g} value={g}>
-              {g}
-            </MenuItem>
-          ))}
-        </TextField>
-        <Box flex={1} />
-      </Stack>
+        </Stack>
+        <Divider />
+        <CardContent>
+          {/* Actions / Filters */}
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={1.5}
+            sx={{ mb: 2 }}
+          >
+            <TextField
+              placeholder="Search name, father name, roll #, phone, email"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              fullWidth
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <TextField
+              select
+              label="ClassLevel"
+              value={gradeFilter}
+              onChange={(e) =>
+                setGradeFilter(e.target.value as ClassLevel | 'All')
+              }
+              sx={{ width: { xs: '100%', sm: 180 } }}
+            >
+              <MenuItem value="All">All</MenuItem>
+              {ClassLevels.map((g) => (
+                <MenuItem key={g} value={g}>
+                  {g}
+                </MenuItem>
+              ))}
+            </TextField>
+            <Box flex={1} />
+          </Stack>
+        </CardContent>
+      </Card>
 
       {/* Table */}
       <Box sx={{ flex: 1, minHeight: 0 }}>

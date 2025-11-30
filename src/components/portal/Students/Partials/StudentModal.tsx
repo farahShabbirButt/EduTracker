@@ -12,8 +12,9 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import SubjectIcon from '@mui/icons-material/LibraryBooks';
-import type { Grade } from '../../../../@types/global.d';
+import type { ClassLevel } from '../../../../@types/global.d';
 import type { Student, StudentFormValues } from '../@types/student.d';
+import { ClassLevels } from '../../../../config/constants';
 
 interface StudentFormDialogProps {
   open: boolean;
@@ -35,7 +36,7 @@ const StudentModal = ({
     lastName: initial?.lastName ?? '',
     fatherName: initial?.fatherName ?? '',
     rollNumber: initial?.rollNumber ?? '',
-    grade: (initial?.grade as Grade) ?? '6',
+    grade: (initial?.grade as ClassLevel) ?? '6',
     phone: initial?.phone ?? '',
     email: initial?.email ?? '',
   }));
@@ -47,7 +48,7 @@ const StudentModal = ({
         lastName: initial?.lastName ?? '',
         fatherName: initial?.fatherName ?? '',
         rollNumber: initial?.rollNumber ?? '',
-        grade: (initial?.grade as Grade) ?? '6',
+        grade: (initial?.grade as ClassLevel) ?? '6',
         phone: initial?.phone ?? '',
         email: initial?.email ?? '',
       });
@@ -66,21 +67,6 @@ const StudentModal = ({
     if (!values.rollNumber.trim()) return alert('Roll number is required');
     onSubmit(values);
   };
-
-  const grades: Grade[] = [
-    'Nursery',
-    'KG',
-    '1',
-    '2',
-    '3',
-    '4',
-    '5',
-    '6',
-    '7',
-    '8',
-    '9',
-    '10',
-  ];
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -132,7 +118,7 @@ const StudentModal = ({
               onChange={handleChange('grade')}
               fullWidth
             >
-              {grades.map((g) => (
+              {ClassLevels.map((g) => (
                 <MenuItem key={g} value={g}>
                   {g}
                 </MenuItem>
@@ -174,7 +160,7 @@ const StudentModal = ({
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} color="inherit">
+        <Button variant="contained" onClick={onClose} color="secondary">
           Cancel
         </Button>
         <Button variant="contained" onClick={handleSubmit}>
