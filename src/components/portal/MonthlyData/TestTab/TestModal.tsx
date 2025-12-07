@@ -1,5 +1,3 @@
-// TestCreationModal.tsx
-
 import { useState, useEffect } from 'react';
 import { TextField, MenuItem, Button, Typography, Box } from '@mui/material';
 import {
@@ -7,6 +5,7 @@ import {
   DummyTests,
   MonthList,
 } from '../../../../config/constants';
+import { TestType } from '../../../../@types/global.d';
 import type { ITest } from '../@types/testData';
 
 const uid = () => Math.random().toString(36).slice(2);
@@ -29,6 +28,7 @@ export default function TestModal({
     month: '',
     year: new Date().getFullYear(),
     classLevel: '',
+    type: TestType.MONTHLY,
   });
 
   useEffect(() => {
@@ -38,6 +38,7 @@ export default function TestModal({
         month: String(existingTest.month),
         year: existingTest.year,
         classLevel: existingTest.classLevel,
+        type: existingTest.type,
       });
     }
   }, [existingTest]);
@@ -51,12 +52,14 @@ export default function TestModal({
       existingTest!.month = Number(form.month);
       existingTest!.year = Number(form.year);
       existingTest!.classLevel = form.classLevel;
+      existingTest!.type = form.type;
     } else {
       const newTest: ITest = {
         id: uid(),
         testName: form.testName,
         month: Number(form.month),
         year: Number(form.year),
+        type: form.type,
         classLevel: form.classLevel,
         createdAt: new Date().toISOString(),
       };
@@ -118,6 +121,22 @@ export default function TestModal({
             {cls}
           </MenuItem>
         ))}
+      </TextField>
+
+      <TextField
+        select
+        fullWidth
+        label="Select Type"
+        sx={{ mb: 2 }}
+        value={form.type}
+        onChange={(e) => handleChange('type', e.target.value)}
+      >
+        <MenuItem key={TestType.MONTHLY} value={TestType.MONTHLY}>
+          Monthly
+        </MenuItem>
+        <MenuItem key={TestType.TEST_SESSION} value={TestType.TEST_SESSION}>
+          Test Session
+        </MenuItem>
       </TextField>
 
       <Button variant="contained" onClick={handleSave} fullWidth sx={{ mt: 1 }}>

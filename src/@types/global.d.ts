@@ -18,3 +18,7 @@ export enum SubjectType {
   ELECTIVE = 'ELECTIVE',
   COMPULSORY = 'COMPULSORY',
 }
+export enum TestType {
+  MONTHLY = 'MONTHLY',
+  TEST_SESSION = 'TEST_SESSION',
+}

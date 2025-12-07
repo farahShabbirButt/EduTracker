@@ -12,6 +12,7 @@ import PortalLayout from './layout/PortalLayout';
 import StudentsManagement from './components/portal/Students/StudentsManagement';
 import SubjectsManagement from './components/portal/Subjects/SubjectsManagement';
 import MonthlyDataManagement from './components/portal/MonthlyData/MonthlyDataManagement';
+import ReportsManagement from './components/portal/Reports/ReportsManagement';
 
 function App() {
   const isAuthed = true; // TODO: replace with real auth state
@@ -66,7 +67,7 @@ function App() {
             path={routes.portal.monthlyData}
             element={<MonthlyDataManagement />}
           />
-          <Route path={routes.portal.reports} element={<div>Reports</div>} />
+          <Route path={routes.portal.reports} element={<ReportsManagement />} />
           <Route path={routes.portal.settings} element={<div>Settings</div>} />
         </Route>
       </Routes>

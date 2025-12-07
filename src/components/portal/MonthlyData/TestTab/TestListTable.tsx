@@ -4,12 +4,17 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  IconButton,
+  Tooltip,
+  MenuItem,
 } from '@mui/material';
 
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+import {
+  MoreVert as MenuIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+} from '@mui/icons-material';
 import { DummyTests } from '../../../../config/constants';
+import DropdownMenu from '../../../../common/DropdownMenu/DropdownMenu';
 
 export default function TestListTable({
   onEditTest,
@@ -41,12 +46,20 @@ export default function TestListTable({
             <TableCell>{t.month}</TableCell>
             <TableCell>{t.year}</TableCell>
             <TableCell>
-              <IconButton onClick={() => onEditTest(t.id)}>
-                <EditIcon />
-              </IconButton>
-              <IconButton onClick={() => handleDelete(t.id)}>
-                <DeleteIcon />
-              </IconButton>
+              <DropdownMenu icon={<MenuIcon fontSize="small" />}>
+                <Tooltip title="Edit">
+                  <MenuItem onClick={() => onEditTest(t.id)}>
+                    <EditIcon fontSize="small" sx={{ mr: 1 }} />
+                    Edit
+                  </MenuItem>
+                </Tooltip>
+                <Tooltip title="Delete">
+                  <MenuItem onClick={() => handleDelete(t.id)}>
+                    <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+                    Delete
+                  </MenuItem>
+                </Tooltip>
+              </DropdownMenu>
             </TableCell>
           </TableRow>
         ))}

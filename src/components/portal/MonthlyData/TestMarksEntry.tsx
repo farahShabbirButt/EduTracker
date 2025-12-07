@@ -15,6 +15,7 @@ import {
   TableBody,
 } from '@mui/material';
 import {
+  ClassLevelsList,
   DummyTestMarks,
   DummyTests,
   StudentsSampleData,
@@ -25,6 +26,7 @@ import type { ITestMarkEntry } from './@types/testData';
 const uid = () => Math.random().toString(36).slice(2);
 
 export default function TestMarksEntry() {
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [selectedTestId, setSelectedTestId] = useState('');
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [maxMarks, setMaxMarks] = useState<number>(100);
@@ -64,11 +66,36 @@ export default function TestMarksEntry() {
     alert('Marks Saved Successfully!');
   };
 
+  //Flow for Monthly Marks Entry
+  // select Class
+  // Get tests for that class
+  // Then select test
+  // Then Select Subject
+  // Get the students of that selected class and Subject
+  // Enter Marks for test
+  // Enter marks in list of students
+
   return (
     <Paper sx={{ p: 3 }}>
       <Typography variant="h5" sx={{ mb: 3 }}>
         Test Marks Entry
       </Typography>
+
+      {/* Class SELECTION */}
+      <TextField
+        fullWidth
+        select
+        label="Select Class"
+        value={selectedClassId}
+        onChange={(e) => setSelectedClassId(e.target.value)}
+        sx={{ mb: 2 }}
+      >
+        {ClassLevelsList.map((c) => (
+          <MenuItem key={c.id} value={c.id}>
+            {c.name}
+          </MenuItem>
+        ))}
+      </TextField>
 
       {/* TEST SELECTION */}
       <TextField
@@ -78,6 +105,7 @@ export default function TestMarksEntry() {
         value={selectedTestId}
         onChange={(e) => setSelectedTestId(e.target.value)}
         sx={{ mb: 2 }}
+        disabled={!selectedClassId}
       >
         {DummyTests.map((t) => (
           <MenuItem key={t.id} value={t.id}>
@@ -87,42 +115,40 @@ export default function TestMarksEntry() {
       </TextField>
 
       {/* SUBJECT SELECTION */}
-      {selectedTestId && (
-        <TextField
-          fullWidth
-          select
-          label="Select Subject"
-          sx={{ mb: 2 }}
-          value={selectedSubjectId}
-          onChange={(e) => {
-            const id = e.target.value;
-            setSelectedSubjectId(id);
+      <TextField
+        fullWidth
+        select
+        label="Select Subject"
+        sx={{ mb: 2 }}
+        value={selectedSubjectId}
+        disabled={!selectedTestId}
+        onChange={(e) => {
+          const id = e.target.value;
+          setSelectedSubjectId(id);
 
-            const sub = SubjectsList.find((s) => s.id === id);
-            if (sub) setMaxMarks(sub.defaultMaxMarks);
-          }}
-        >
-          {SubjectsList.filter(
-            (s) => s.grades && s.grades.includes(selectedTest?.classLevel || '')
-          ).map((subj) => (
-            <MenuItem key={subj.id} value={subj.id}>
-              {subj.name}
-            </MenuItem>
-          ))}
-        </TextField>
-      )}
+          const sub = SubjectsList.find((s) => s.id === id);
+          if (sub) setMaxMarks(sub.defaultMaxMarks);
+        }}
+      >
+        {SubjectsList.filter(
+          (s) => s.grades && s.grades.includes(selectedTest?.classLevel || '')
+        ).map((subj) => (
+          <MenuItem key={subj.id} value={subj.id}>
+            {subj.name}
+          </MenuItem>
+        ))}
+      </TextField>
 
       {/* MAX MARKS */}
-      {selectedSubjectId && (
-        <TextField
-          type="number"
-          label="Max Marks"
-          fullWidth
-          value={maxMarks}
-          onChange={(e) => setMaxMarks(Number(e.target.value))}
-          sx={{ mb: 3 }}
-        />
-      )}
+      <TextField
+        type="number"
+        label="Max Marks"
+        fullWidth
+        value={maxMarks}
+        onChange={(e) => setMaxMarks(Number(e.target.value))}
+        sx={{ mb: 3 }}
+        disabled={!selectedSubjectId}
+      />
 
       {/* STUDENT MARKS TABLE */}
       {selectedSubjectId && (

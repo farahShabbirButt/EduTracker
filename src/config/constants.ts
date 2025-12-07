@@ -1,9 +1,9 @@
-import { SubjectType } from '../@types/global.d';
-import type {
-  ITest,
-  ITestMarkEntry,
-  ITestSubjectConfig,
-} from '../components/portal/MonthlyData/@types/testData';
+import { SubjectType, TestType } from '../@types/global.d';
+import {
+  type ITest,
+  type ITestMarkEntry,
+  type ITestSubjectConfig,
+} from '../components/portal/MonthlyData/@types/testData.d';
 import type { Student } from '../components/portal/Students/@types/student.d';
 import type {
   GradeBoundary,
@@ -300,6 +300,7 @@ export const DummyTests: ITest[] = [
     year: 2025,
     classLevel: '9',
     createdAt: new Date().toISOString(),
+    type: TestType.TEST_SESSION,
   },
 ];
 
@@ -321,3 +322,72 @@ export const DummyTestMarks: ITestMarkEntry[] = [
     maxMarks: 100,
   },
 ];
+export const ClassLevelsList = [
+  { id: 1, externalId: 'CLS-NUR', name: 'Nursery' },
+  { id: 2, externalId: 'CLS-KG', name: 'KG' },
+  { id: 3, externalId: 'CLS-1', name: '1' },
+  { id: 4, externalId: 'CLS-2', name: '2' },
+  { id: 5, externalId: 'CLS-3', name: '3' },
+  { id: 6, externalId: 'CLS-4', name: '4' },
+  { id: 7, externalId: 'CLS-5', name: '5' },
+  { id: 8, externalId: 'CLS-6', name: '6' },
+  { id: 9, externalId: 'CLS-7', name: '7' },
+  { id: 10, externalId: 'CLS-8', name: '8' },
+  { id: 11, externalId: 'CLS-9', name: '9' },
+  { id: 12, externalId: 'CLS-10', name: '10' },
+  { id: 13, externalId: 'CLS-11', name: '11' },
+  { id: 14, externalId: 'CLS-12', name: '12' },
+];
+
+export const SampleReportCard = {
+  studentInfo: {
+    name: 'Qasim',
+    fatherName: 'Amjad',
+    class: '9th',
+    rollNo: '615872',
+  },
+  tests: [
+    {
+      testName: 'Test 1',
+      subjects: {
+        Maths: 30,
+        Urdu: 47,
+        English: 54,
+        AlQuran: 30,
+        Islamic: 28,
+        BioCom: 29,
+        Physics: 28,
+        Chemistry: 28,
+      },
+      total: 274,
+      percentage: 94.48,
+      grade: 'A+',
+    },
+    {
+      testName: 'Test 2',
+      subjects: {
+        Maths: 22,
+        Urdu: 47,
+        English: 58,
+        AlQuran: 30,
+        Islamic: 27,
+        BioCom: 27,
+        Physics: 27,
+        Chemistry: 22,
+      },
+      total: 263,
+      percentage: 90.69,
+      grade: 'A+',
+    },
+  ],
+  behaviour: 'Excellent',
+  uniformCleanliness: 'Excellent',
+  overallResult: {
+    obtainedMarks: 537,
+    totalMarks: 600,
+    percentage: 89.5,
+    grade: 'A+',
+    status: 'PASS',
+    remarks: 'Great performance! Keep improving. In sha Allah.',
+  },
+};
