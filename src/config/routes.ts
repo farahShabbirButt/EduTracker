@@ -10,6 +10,7 @@ export const routes = {
     dashboard: '/dashboard',
     student: '/students',
     subjects: '/subjects',
+    classes: '/classes',
     monthlyData: '/monthly-data',
     reports: '/reports',
     settings: '/settings',

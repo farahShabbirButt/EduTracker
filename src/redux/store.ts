@@ -7,8 +7,14 @@ declare global {
   }
 }
 
+import studentReducer from './slices/studentSlice';
+import classReducer from './slices/classSlice';
+
 // Combine reducers
-const rootReducer = combineReducers({});
+const rootReducer = combineReducers({
+  students: studentReducer,
+  classes: classReducer,
+});
 
 const store = configureStore({
   reducer: rootReducer,

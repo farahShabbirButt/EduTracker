@@ -1,21 +1,33 @@
 export interface Student {
-  id: string; // UUID/string id
+  id: number;
+  externalId: string;
   firstName: string;
-  lastName?: string;
-  fatherName?: string;
+  lastName: string;
+  fatherName: string;
   rollNumber: string;
-  grade: Grade;
-  phone?: string;
   email?: string;
-  subjectsAssigned?: string[]; // keep for future; count shown for now
+  contactNo?: string;
+  classId: number;
+  class?: {
+    name: string;
+    externalId: string;
+  };
+  subjects?: {
+    externalId: string;
+    name: string;
+    subjectType: string;
+    maxMarks: number;
+  }[];
+  isActive: boolean;
+  createdAt: string;
 }
 
 export type StudentFormValues = {
   firstName: string;
-  lastName?: string;
-  fatherName?: string;
+  lastName: string;
+  fatherName: string;
   rollNumber: string;
-  grade: Grade;
-  phone?: string;
+  classId: string; // Used for the select dropdown (externalId)
+  contactNo?: string;
   email?: string;
 };

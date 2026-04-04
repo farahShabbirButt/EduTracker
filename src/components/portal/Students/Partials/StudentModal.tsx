@@ -11,10 +11,11 @@ import {
   TextField,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import SubjectIcon from '@mui/icons-material/LibraryBooks';
-import type { ClassLevel } from '../../../../@types/global.d';
 import type { Student, StudentFormValues } from '../@types/student.d';
-import { ClassLevels } from '../../../../config/constants';
+import type { RootState, AppDispatch } from '../../../../redux/store';
+import { fetchClasses } from '../../../../redux/slices/classSlice';
 
 interface StudentFormDialogProps {
   open: boolean;
@@ -31,15 +32,24 @@ const StudentModal = ({
   mode,
   initial,
 }: StudentFormDialogProps) => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { classes } = useSelector((state: RootState) => state.classes);
+
   const [values, setValues] = useState<StudentFormValues>(() => ({
     firstName: initial?.firstName ?? '',
     lastName: initial?.lastName ?? '',
     fatherName: initial?.fatherName ?? '',
     rollNumber: initial?.rollNumber ?? '',
-    grade: (initial?.grade as ClassLevel) ?? '6',
-    phone: initial?.phone ?? '',
+    classId: initial?.class?.externalId ?? '6', // Using externalId for class selection
+    contactNo: initial?.contactNo ?? '',
     email: initial?.email ?? '',
   }));
+
+  useEffect(() => {
+    if (classes.length === 0) {
+      dispatch(fetchClasses());
+    }
+  }, [dispatch, classes.length]);
 
   useEffect(() => {
     if (open) {
@@ -48,8 +58,8 @@ const StudentModal = ({
         lastName: initial?.lastName ?? '',
         fatherName: initial?.fatherName ?? '',
         rollNumber: initial?.rollNumber ?? '',
-        grade: (initial?.grade as ClassLevel) ?? '6',
-        phone: initial?.phone ?? '',
+        classId: initial?.class?.externalId ?? '6',
+        contactNo: initial?.contactNo ?? '',
         email: initial?.email ?? '',
       });
     }
@@ -114,22 +124,22 @@ const StudentModal = ({
             <TextField
               select
               label="Grade/Class"
-              value={values.grade}
-              onChange={handleChange('grade')}
+              value={values.classId}
+              onChange={handleChange('classId')}
               fullWidth
             >
-              {ClassLevels.map((g) => (
-                <MenuItem key={g} value={g}>
-                  {g}
+              {classes.map((c) => (
+                <MenuItem key={c.externalId} value={c.externalId}>
+                  {c.name}
                 </MenuItem>
               ))}
             </TextField>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
-              label="Phone"
-              value={values.phone}
-              onChange={handleChange('phone')}
+              label="Contact No"
+              value={values.contactNo}
+              onChange={handleChange('contactNo')}
               fullWidth
               placeholder="03xx-xxxxxxx"
               inputProps={{ inputMode: 'tel' }}

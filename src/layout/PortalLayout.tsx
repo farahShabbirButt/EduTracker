@@ -34,6 +34,7 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import SearchIcon from '@mui/icons-material/Search';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
+import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 
 import { routes } from '../config/routes';
 import { ThemeContext } from '../theme/ThemeContextProvider';
@@ -51,6 +52,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', to: routes.portal.dashboard, icon: <DashboardIcon /> },
   { label: 'Students', to: routes.portal.student, icon: <PeopleIcon /> },
+  { label: 'Classes', to: routes.portal.classes, icon: <MeetingRoomIcon /> },
   { label: 'Subjects', to: routes.portal.subjects, icon: <BookIcon /> },
   {
     label: 'Monthly Data',

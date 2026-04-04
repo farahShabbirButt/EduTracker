@@ -13,6 +13,7 @@ import StudentsManagement from './components/portal/Students/StudentsManagement'
 import SubjectsManagement from './components/portal/Subjects/SubjectsManagement';
 import MonthlyDataManagement from './components/portal/MonthlyData/MonthlyDataManagement';
 import ReportsManagement from './components/portal/Reports/ReportsManagement';
+import ClassesManagement from './components/portal/Classes/ClassesManagement';
 
 function App() {
   const isAuthed = true; // TODO: replace with real auth state
@@ -63,6 +64,7 @@ function App() {
             path={routes.portal.subjects}
             element={<SubjectsManagement />}
           />
+          <Route path={routes.portal.classes} element={<ClassesManagement />} />
           <Route
             path={routes.portal.monthlyData}
             element={<MonthlyDataManagement />}

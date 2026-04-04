@@ -16,12 +16,20 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 
+import { useEffect, useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import type { RootState, AppDispatch } from '../../../redux/store';
+import {
+  fetchStudents,
+  addStudent,
+  editStudent,
+  removeStudent,
+} from '../../../redux/slices/studentSlice';
 import type { ClassLevel } from '../../../@types/global.d';
 import type { Student, StudentFormValues } from './@types/student.d';
-import { ClassLevels, StudentsSampleData } from '../../../config/constants';
+import { ClassLevels } from '../../../config/constants';
 import StudentModal from './Partials/StudentModal';
 import DeleteDialog from '../../../common/Dialogs/DeleteDialog/DeleteDialog';
-import { useMemo, useState } from 'react';
 
 import {
   MoreVert as MenuIcon,
@@ -34,8 +42,11 @@ import {
 import DropdownMenu from '../../../common/DropdownMenu/DropdownMenu';
 
 const StudentsManagement = () => {
-  // state
-  const [rows, setRows] = useState<Student[]>(StudentsSampleData);
+  const dispatch = useDispatch<AppDispatch>();
+  const { students: rows, loading } = useSelector(
+    (state: RootState) => state.students
+  );
+
   const [dialogMode, setDialogMode] = useState<
     'create' | 'edit' | 'delete' | null
   >(null);
@@ -45,26 +56,35 @@ const StudentsManagement = () => {
   // filters
   const [search, setSearch] = useState('');
   const [gradeFilter, setGradeFilter] = useState<ClassLevel | 'All'>('All');
+  // Load data on mount
+  useEffect(() => {
+    dispatch(fetchStudents());
+  }, [dispatch]);
 
   // derived rows based on filters
   const filtered = useMemo(() => {
+    let filteredRows = rows;
+    if (gradeFilter !== 'All') {
+      filteredRows = filteredRows.filter((r) => r.class?.name === gradeFilter);
+    }
     const q = search.trim().toLowerCase();
-    return rows.filter((r) => {
-      const matchesGrade = gradeFilter === 'All' || r.grade === gradeFilter;
-      const fullName = [r.firstName, r.lastName]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-      const father = (r.fatherName ?? '').toLowerCase();
-      const matchQ =
-        !q ||
-        fullName.includes(q) ||
-        father.includes(q) ||
-        r.rollNumber.toLowerCase().includes(q) ||
-        (r.email ?? '').toLowerCase().includes(q) ||
-        (r.phone ?? '').toLowerCase().includes(q);
-      return matchesGrade && matchQ;
-    });
+    if (q) {
+      filteredRows = filteredRows.filter((r) => {
+        const fullName = [r.firstName, r.lastName]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        const father = (r.fatherName ?? '').toLowerCase();
+        return (
+          fullName.includes(q) ||
+          father.includes(q) ||
+          r.rollNumber.toLowerCase().includes(q) ||
+          (r.email ?? '').toLowerCase().includes(q) ||
+          (r.contactNo ?? '').toLowerCase().includes(q)
+        );
+      });
+    }
+    return filteredRows;
   }, [rows, search, gradeFilter]);
 
   const openCreate = () => {
@@ -79,15 +99,10 @@ const StudentsManagement = () => {
 
   const handleSubmit = (payload: StudentFormValues) => {
     if (dialogMode === 'create') {
-      const newRow: Student = {
-        id: `s-${Date.now()}`,
-        ...payload,
-        subjectsAssigned: [],
-      };
-      setRows((p) => [newRow, ...p]);
+      dispatch(addStudent(payload));
     } else if (editingRow) {
-      setRows((p) =>
-        p.map((r) => (r.id === editingRow.id ? { ...r, ...payload } : r))
+      dispatch(
+        editStudent({ externalId: editingRow.externalId, data: payload })
       );
     }
     setDialogMode(null);
@@ -99,7 +114,7 @@ const StudentsManagement = () => {
   };
   const confirmDelete = () => {
     if (rowToDelete) {
-      setRows((p) => p.filter((r) => r.id !== rowToDelete.id));
+      dispatch(removeStudent(rowToDelete.externalId));
     }
     setDialogMode(null);
     setRowToDelete(null);
@@ -134,12 +149,13 @@ const StudentsManagement = () => {
         width: 120,
       },
       {
-        field: 'grade',
-        headerName: 'ClassLevel',
+        field: 'class',
+        headerName: 'Class',
         width: 110,
+        valueGetter: (_value, row) => row.class?.name || '-',
       },
       {
-        field: 'phone',
+        field: 'contactNo',
         headerName: 'Contact',
         flex: 1,
         minWidth: 200,
@@ -147,7 +163,7 @@ const StudentsManagement = () => {
         align: 'center',
         renderCell: (params: GridRenderCellParams<any, Student>) => (
           <Typography variant="caption" color="text.secondary">
-            {params.row.phone ? params.row.phone : '-'}
+            {params.row.contactNo ? params.row.contactNo : '-'}
           </Typography>
         ),
       },
@@ -164,16 +180,14 @@ const StudentsManagement = () => {
         ),
       },
       {
-        field: 'subjectsAssigned',
+        field: 'subjects',
         headerName: 'Subjects',
         width: 120,
         renderCell: (p) => (
           <Chip
-            label={`${p.row.subjectsAssigned?.length ?? 0}`}
+            label={`${p.row.subjects?.length ?? 0}`}
             size="small"
-            color={
-              (p.row.subjectsAssigned?.length ?? 0) > 0 ? 'primary' : 'default'
-            }
+            color={(p.row.subjects?.length ?? 0) > 0 ? 'primary' : 'default'}
             variant="outlined"
           />
         ),
@@ -288,6 +302,7 @@ const StudentsManagement = () => {
         <DataGrid
           rows={filtered}
           columns={columns}
+          loading={loading}
           disableRowSelectionOnClick
           pageSizeOptions={[5, 10, 25]}
           initialState={{
