@@ -134,7 +134,7 @@ export default function TestModal({
         <MenuItem key={TestType.MONTHLY} value={TestType.MONTHLY}>
           Monthly
         </MenuItem>
-        <MenuItem key={TestType.TEST_SESSION} value={TestType.TEST_SESSION}>
+        <MenuItem key={TestType.SESSION} value={TestType.SESSION}>
           Test Session
         </MenuItem>
       </TextField>

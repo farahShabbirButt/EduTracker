@@ -51,7 +51,7 @@ const ReportSettings = ({
                 onChange={handleChangeSettings}
               >
                 <MenuItem value={TestType.MONTHLY}>Monthly </MenuItem>
-                <MenuItem value={TestType.TEST_SESSION}>Test Session</MenuItem>
+                <MenuItem value={TestType.SESSION}>Test Session</MenuItem>
               </Select>
             </FormControl>
           </Grid>

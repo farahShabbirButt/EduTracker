@@ -20,5 +20,5 @@ export enum SubjectType {
 }
 export enum TestType {
   MONTHLY = 'MONTHLY',
-  TEST_SESSION = 'TEST_SESSION',
+  SESSION = 'SESSION',
 }

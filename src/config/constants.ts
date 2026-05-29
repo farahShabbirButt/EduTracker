@@ -300,7 +300,7 @@ export const DummyTests: ITest[] = [
     year: 2025,
     classLevel: '9',
     createdAt: new Date().toISOString(),
-    type: TestType.TEST_SESSION,
+    type: TestType.SESSION,
   },
 ];
 
