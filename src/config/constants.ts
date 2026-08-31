@@ -175,29 +175,37 @@ export const ResultSampleData = {
   },
 };
 
-// ------ Fake seed data (you’ll replace with API later) ------
+// ------ Fake seed data (replaced per-screen as each integration wave lands) ------
 export const StudentsSampleData: Student[] = [
   {
-    id: 's-001',
+    id: 1,
+    externalId: '11111111-1111-4111-8111-111111111111',
     firstName: 'Ayesha',
     lastName: 'Khan',
     fatherName: 'Imran Khan',
     rollNumber: 'ET-001',
-    grade: '6',
-    phone: '0300-1234567',
+    contactNo: '0300-1234567',
     email: '',
-    subjectsAssigned: ['Math', 'Science'],
+    classId: 6,
+    class: { name: 'Class 6', externalId: '66666666-6666-4666-8666-666666666666' },
+    subjects: [],
+    isActive: true,
+    createdAt: '2026-01-01T00:00:00.000Z',
   },
   {
-    id: 's-002',
+    id: 2,
+    externalId: '22222222-2222-4222-8222-222222222222',
     firstName: 'Ali',
     lastName: 'Raza',
     fatherName: 'Muhammad Raza',
     rollNumber: 'ET-002',
-    grade: '7',
-    phone: '0301-9876543',
+    contactNo: '0301-9876543',
     email: 'ali.raza@example.com',
-    subjectsAssigned: [],
+    classId: 7,
+    class: { name: 'Class 7', externalId: '77777777-7777-4777-8777-777777777777' },
+    subjects: [],
+    isActive: true,
+    createdAt: '2026-01-01T00:00:00.000Z',
   },
 ];
 const uid = () => Math.random().toString(36).slice(2);

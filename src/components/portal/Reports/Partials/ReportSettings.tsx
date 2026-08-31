@@ -108,7 +108,7 @@ const ReportSettings = ({
                   const selectedIds = selected as string[];
 
                   const names = StudentsSampleData.filter((student) =>
-                    selectedIds.includes(student.id)
+                    selectedIds.includes(student.externalId)
                   ).map(
                     (student) => `${student.firstName} ${student.lastName}`
                   );
@@ -117,10 +117,10 @@ const ReportSettings = ({
                 }}
               >
                 {StudentsSampleData?.map((student) => (
-                  <MenuItem value={student?.id}>
+                  <MenuItem key={student.externalId} value={student?.externalId}>
                     <Checkbox
                       checked={reportSettings?.studentIds?.includes(
-                        student?.id
+                        student?.externalId
                       )}
                     />
                     <ListItemText
