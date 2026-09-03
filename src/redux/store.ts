@@ -7,11 +7,13 @@ declare global {
   }
 }
 
+import authReducer from './slices/authSlice';
 import studentReducer from './slices/studentSlice';
 import classReducer from './slices/classSlice';
 
 // Combine reducers
 const rootReducer = combineReducers({
+  auth: authReducer,
   students: studentReducer,
   classes: classReducer,
 });

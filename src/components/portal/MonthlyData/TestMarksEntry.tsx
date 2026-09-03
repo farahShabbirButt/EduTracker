@@ -39,14 +39,14 @@ export default function TestMarksEntry() {
   const filteredStudents = useMemo(() => {
     if (!selectedTest) return [];
     return StudentsSampleData.filter(
-      (s) => s.grade === selectedTest.classLevel
+      (s) => (s.class?.name ?? '') === selectedTest.classLevel
     );
   }, [selectedTest]);
 
   const handleSave = () => {
     filteredStudents.forEach((s) => {
       const input = (
-        document.getElementById(`marks-${s.id}`) as HTMLInputElement
+        document.getElementById(`marks-${s.externalId}`) as HTMLInputElement
       )?.value;
 
       const obtained = Number(input || 0);
@@ -54,7 +54,7 @@ export default function TestMarksEntry() {
       const entry: ITestMarkEntry = {
         id: uid(),
         testId: selectedTestId,
-        studentId: s.id,
+        studentId: s.externalId,
         subjectId: selectedSubjectId,
         obtainedMarks: obtained,
         maxMarks: maxMarks,
@@ -167,7 +167,7 @@ export default function TestMarksEntry() {
                 </TableCell>
                 <TableCell>
                   <input
-                    id={`marks-${st.id}`}
+                    id={`marks-${st.externalId}`}
                     type="number"
                     style={{
                       width: '100px',
