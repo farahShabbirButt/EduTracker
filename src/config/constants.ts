@@ -187,7 +187,10 @@ export const StudentsSampleData: Student[] = [
     contactNo: '0300-1234567',
     email: '',
     classId: 6,
-    class: { name: 'Class 6', externalId: '66666666-6666-4666-8666-666666666666' },
+    class: {
+      name: 'Class 6',
+      externalId: '66666666-6666-4666-8666-666666666666',
+    },
     subjects: [],
     isActive: true,
     createdAt: '2026-01-01T00:00:00.000Z',
@@ -202,7 +205,10 @@ export const StudentsSampleData: Student[] = [
     contactNo: '0301-9876543',
     email: 'ali.raza@example.com',
     classId: 7,
-    class: { name: 'Class 7', externalId: '77777777-7777-4777-8777-777777777777' },
+    class: {
+      name: 'Class 7',
+      externalId: '77777777-7777-4777-8777-777777777777',
+    },
     subjects: [],
     isActive: true,
     createdAt: '2026-01-01T00:00:00.000Z',

@@ -35,3 +35,11 @@ export const SCORE_ROUTES = {
   ENTER_MARKS: '/student-score/entry',
   GET_MARKS_ENTRY: (query: string) => `/student-score/entry?${query}`,
 };
+
+export const AUTH_ROUTES = {
+  LOGIN: '/auth/login',
+  LOGOUT: '/auth/logout',
+  ME: '/auth/me',
+  FORGOT_PASSWORD: '/auth/forgot-password',
+  RESET_PASSWORD: '/auth/reset-password',
+};

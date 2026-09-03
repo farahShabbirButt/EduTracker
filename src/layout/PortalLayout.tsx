@@ -1,4 +1,5 @@
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   AppBar,
   Toolbar,
@@ -39,6 +40,8 @@ import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import { routes } from '../config/routes';
 import { ThemeContext } from '../theme/ThemeContextProvider';
 import { useContext, useState } from 'react';
+import type { AppDispatch, RootState } from '../redux/store';
+import { logout } from '../redux/slices/authSlice';
 
 const DRAWER_OPEN = 240;
 const DRAWER_CLOSED = 55;
@@ -71,6 +74,9 @@ const PortalLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [profileAnchor, setProfileAnchor] = useState<null | HTMLElement>(null);
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
+  const user = useSelector((state: RootState) => state.auth.user);
 
   const themeContext = useContext(ThemeContext);
   if (!themeContext) {
@@ -83,6 +89,11 @@ const PortalLayout = () => {
   const openProfile = (e: React.MouseEvent<HTMLElement>) =>
     setProfileAnchor(e.currentTarget);
   const closeProfile = () => setProfileAnchor(null);
+  const handleLogout = async () => {
+    closeProfile();
+    await dispatch(logout());
+    navigate(routes.auth.login, { replace: true });
+  };
 
   const drawerContent = (
     <Box
@@ -275,9 +286,11 @@ const PortalLayout = () => {
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="Account">
+          <Tooltip title={user?.email ?? 'Account'}>
             <IconButton onClick={openProfile} sx={{ ml: 1 }}>
-              <Avatar sx={{ width: 32, height: 32 }}>A</Avatar>
+              <Avatar sx={{ width: 32, height: 32 }}>
+                {(user?.name ?? user?.email ?? 'A').charAt(0).toUpperCase()}
+              </Avatar>
             </IconButton>
           </Tooltip>
           <Menu
@@ -305,7 +318,7 @@ const PortalLayout = () => {
               />
             </MenuItem>
 
-            <MenuItem onClick={closeProfile}>Logout</MenuItem>
+            <MenuItem onClick={handleLogout}>Logout</MenuItem>
           </Menu>
         </Toolbar>
       </AppBar>

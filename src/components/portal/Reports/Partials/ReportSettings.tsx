@@ -117,7 +117,10 @@ const ReportSettings = ({
                 }}
               >
                 {StudentsSampleData?.map((student) => (
-                  <MenuItem key={student.externalId} value={student?.externalId}>
+                  <MenuItem
+                    key={student.externalId}
+                    value={student?.externalId}
+                  >
                     <Checkbox
                       checked={reportSettings?.studentIds?.includes(
                         student?.externalId
