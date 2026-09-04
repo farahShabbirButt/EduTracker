@@ -12,47 +12,98 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import type { ClassLevel } from '../../../../@types/global';
-import type { Subject } from '../@types/subject';
-import { ClassLevels } from '../../../../config/constants';
+import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
+import type { AppDispatch, RootState } from '../../../../redux/store';
+import { fetchClasses } from '../../../../redux/slices/classSlice';
+import { assignSubjectsToClass } from '../../../../redux/slices/subjectSlice';
+import type { ApiSubject } from '../@types/subject.d';
 
 type Props = {
   open: boolean;
-  allSubjects: Subject[]; // full list to choose from
-  getAssignedForGrade: (grade: ClassLevel) => Subject[]; // how many already assigned
+  allSubjects: ApiSubject[]; // full list to choose from
   onClose: () => void;
-  onSave: (grade: ClassLevel, subjectIds: string[]) => void;
 };
 
 export default function AssignToClassesDialog({
   open,
   onClose,
   allSubjects,
-  getAssignedForGrade,
-  onSave,
 }: Props) {
-  const [grade, setGrade] = React.useState<ClassLevel>('9');
-  const [selected, setSelected] = React.useState<Subject[]>([]);
+  const dispatch = useDispatch<AppDispatch>();
+  const { classes, loading: classesLoading } = useSelector(
+    (state: RootState) => state.classes
+  );
+
+  const [classId, setClassId] = React.useState('');
+  const [selected, setSelected] = React.useState<ApiSubject[]>([]);
+  const [submitting, setSubmitting] = React.useState(false);
 
   React.useEffect(() => {
-    setSelected(getAssignedForGrade(grade));
-  }, [grade, getAssignedForGrade]);
+    if (open && classes.length === 0) {
+      dispatch(fetchClasses());
+    }
+  }, [open, classes.length, dispatch]);
+
+  // Default to the first class once the list is available.
+  React.useEffect(() => {
+    if (open && !classId && classes.length > 0) {
+      setClassId(classes[0].externalId);
+    }
+  }, [open, classId, classes]);
+
+  React.useEffect(() => {
+    if (!classId) {
+      setSelected([]);
+      return;
+    }
+    setSelected(
+      allSubjects.filter((s) =>
+        s.classes?.some((c) => c.externalId === classId)
+      )
+    );
+  }, [classId, allSubjects]);
+
+  const handleSave = async () => {
+    if (!classId || selected.length === 0) return;
+    setSubmitting(true);
+    const result = await dispatch(
+      assignSubjectsToClass({
+        classId,
+        subjectIds: selected.map((s) => s.externalId),
+      })
+    );
+    setSubmitting(false);
+
+    if (assignSubjectsToClass.fulfilled.match(result)) {
+      toast.success(result.payload);
+      onClose();
+    } else {
+      toast.error((result.payload as string) || 'Failed to assign subjects');
+    }
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Assign Subjects to Grades</DialogTitle>
+      <DialogTitle>Assign Subjects to Classes</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
           <TextField
             select
-            label="Class Level"
-            value={grade}
-            onChange={(e) => setGrade(e.target.value as ClassLevel)}
+            label="Class"
+            value={classId}
+            onChange={(e) => setClassId(e.target.value)}
+            disabled={classesLoading || classes.length === 0}
+            helperText={
+              !classesLoading && classes.length === 0
+                ? 'No classes available yet'
+                : undefined
+            }
             sx={{ width: 220 }}
           >
-            {ClassLevels.map((g) => (
-              <MenuItem key={g} value={g}>
-                {g === 'KG' || g === 'Nursery' ? g : `ClassLevel ${g}`}
+            {classes.map((c) => (
+              <MenuItem key={c.externalId} value={c.externalId}>
+                {c.name}
               </MenuItem>
             ))}
           </TextField>
@@ -61,6 +112,9 @@ export default function AssignToClassesDialog({
             multiple
             options={allSubjects}
             getOptionLabel={(o) => o.name}
+            isOptionEqualToValue={(option, value) =>
+              option.externalId === value.externalId
+            }
             value={selected}
             onChange={(_, v) => setSelected(v)}
             renderInput={(params) => (
@@ -74,8 +128,8 @@ export default function AssignToClassesDialog({
               value.map((option, index) => (
                 <Chip
                   {...getTagProps({ index })}
-                  key={option.id}
-                  label={`${option.name} (${option.defaultMaxMarks})`}
+                  key={option.externalId}
+                  label={`${option.name} (${option.maxMarks})`}
                 />
               ))
             }
@@ -86,12 +140,8 @@ export default function AssignToClassesDialog({
         <Button onClick={onClose}>Close</Button>
         <Button
           variant="contained"
-          onClick={() =>
-            onSave(
-              grade,
-              selected.map((s) => s.id)
-            )
-          }
+          disabled={!classId || selected.length === 0 || submitting}
+          onClick={handleSave}
         >
           Save
         </Button>

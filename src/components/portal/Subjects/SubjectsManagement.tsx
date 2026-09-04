@@ -13,97 +13,105 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LinkIcon from '@mui/icons-material/Link';
-import type { GradeBoundary, Subject } from './@types/subject';
-import { SubjectType, type ClassLevel } from '../../../@types/global.d';
+import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
+import type { AppDispatch, RootState } from '../../../redux/store';
 import {
-  ClassLevels,
-  GradesList,
-  SubjectsList,
-} from '../../../config/constants';
+  fetchSubjects,
+  addSubject,
+  editSubject,
+  removeSubject,
+} from '../../../redux/slices/subjectSlice';
+import { fetchClasses } from '../../../redux/slices/classSlice';
+import type { ApiSubject, SubjectFormValues } from './@types/subject.d';
 import SubjectListing from './Partial/SubjectsListing';
 import SubjectDialog from './Partial/SubjectsDialog';
 import AssignToClasses from './Partial/AssignToClasses';
 import GradeBoundariesDialog from './Partial/GradeBoundries';
-
-const uid = () => Math.random().toString(36).slice(2);
+import DeleteDialog from '../../../common/Dialogs/DeleteDialog/DeleteDialog';
 
 export default function SubjectsManagement() {
-  const [subjects, setSubjects] = React.useState<Subject[]>(SubjectsList);
-  const [boundaries, setBoundaries] =
-    React.useState<GradeBoundary[]>(GradesList);
+  const dispatch = useDispatch<AppDispatch>();
+  const { subjects, loading } = useSelector(
+    (state: RootState) => state.subjects
+  );
+  const { classes } = useSelector((state: RootState) => state.classes);
 
-  const [gradeFilter, setGradeFilter] = React.useState<'' | ClassLevel>('');
+  const [classFilter, setClassFilter] = React.useState('');
   const [search, setSearch] = React.useState('');
-  const [openEdit, setOpenEdit] = React.useState<Subject | null>(null);
-  const [openAdd, setOpenAdd] = React.useState(false);
+  const [dialogMode, setDialogMode] = React.useState<
+    'create' | 'edit' | 'delete' | null
+  >(null);
+  const [activeSubject, setActiveSubject] = React.useState<ApiSubject | null>(
+    null
+  );
   const [openAssign, setOpenAssign] = React.useState(false);
   const [openBoundaries, setOpenBoundaries] = React.useState(false);
 
+  React.useEffect(() => {
+    dispatch(fetchSubjects());
+    dispatch(fetchClasses());
+  }, [dispatch]);
+
   const filtered = React.useMemo(() => {
     let rows = subjects;
-    if (gradeFilter) rows = rows.filter((s) => s.grades?.includes(gradeFilter));
+    if (classFilter) {
+      rows = rows.filter((s) =>
+        s.classes?.some((c) => c.externalId === classFilter)
+      );
+    }
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       rows = rows.filter((s) => s.name.toLowerCase().includes(q));
     }
     return rows;
-  }, [subjects, gradeFilter, search]);
+  }, [subjects, classFilter, search]);
 
-  const upsertSubject = (
-    payload: {
-      name: string;
-      defaultMaxMarks: number;
-      subjectType: SubjectType;
-    },
-    editing?: Subject
-  ) => {
-    if (editing) {
-      setSubjects((prev) =>
-        prev.map((s) =>
-          s.id === editing.id
-            ? {
-                ...s,
-                name: payload.name,
-                defaultMaxMarks: payload.defaultMaxMarks,
-              }
-            : s
-        )
-      );
+  const openCreate = () => {
+    setDialogMode('create');
+    setActiveSubject(null);
+  };
+
+  const openEdit = (row: ApiSubject) => {
+    setDialogMode('edit');
+    setActiveSubject(row);
+  };
+
+  const handleSave = async (data: SubjectFormValues) => {
+    const result =
+      dialogMode === 'edit' && activeSubject
+        ? await dispatch(
+            editSubject({ externalId: activeSubject.externalId, data })
+          )
+        : await dispatch(addSubject(data));
+
+    if (
+      addSubject.fulfilled.match(result) ||
+      editSubject.fulfilled.match(result)
+    ) {
+      toast.success(result.payload.message);
+      setDialogMode(null);
+      setActiveSubject(null);
     } else {
-      setSubjects((prev) => [
-        ...prev,
-        {
-          id: uid(),
-          name: payload.name,
-          defaultMaxMarks: payload.defaultMaxMarks,
-          grades: [],
-          subjectType: payload.subjectType,
-        },
-      ]);
+      toast.error((result.payload as string) || 'Failed to save subject');
     }
   };
 
-  const deleteSubject = (row: Subject) => {
-    if (!confirm(`Delete subject "${row.name}"?`)) return;
-    setSubjects((prev) => prev.filter((s) => s.id !== row.id));
+  const askDelete = (row: ApiSubject) => {
+    setActiveSubject(row);
+    setDialogMode('delete');
   };
 
-  const getAssignedForGrade = (grade: ClassLevel): Subject[] =>
-    subjects.filter((s) => s.grades?.includes(grade));
-
-  const saveAssignments = (grade: ClassLevel, subjectIds: string[]) => {
-    setSubjects((prev) =>
-      prev.map((s) => {
-        const has = subjectIds.includes(s.id);
-        const existing = new Set(s.grades ?? []);
-        if (has) {
-          existing.add(grade);
-        } else {
-          existing.delete(grade);
-        }
-        return { ...s, grades: Array.from(existing) as ClassLevel[] };
-      })
-    );
+  const confirmDelete = async () => {
+    if (!activeSubject) return;
+    const result = await dispatch(removeSubject(activeSubject.externalId));
+    if (removeSubject.fulfilled.match(result)) {
+      toast.success(result.payload.message);
+    } else {
+      toast.error((result.payload as string) || 'Failed to delete subject');
+    }
+    setDialogMode(null);
+    setActiveSubject(null);
   };
 
   return (
@@ -128,17 +136,15 @@ export default function SubjectsManagement() {
             />
             <TextField
               select
-              label="Filter by Class level"
-              value={gradeFilter}
-              onChange={(e) =>
-                setGradeFilter(e.target.value as ClassLevel | '')
-              }
+              label="Filter by Class"
+              value={classFilter}
+              onChange={(e) => setClassFilter(e.target.value)}
               sx={{ minWidth: 200 }}
             >
-              <MenuItem value="">All Grades</MenuItem>
-              {ClassLevels.map((g) => (
-                <MenuItem key={g} value={g}>
-                  {g === 'KG' || g === 'Nursery' ? g : `Class ${g}`}
+              <MenuItem value="">All Classes</MenuItem>
+              {classes.map((c) => (
+                <MenuItem key={c.externalId} value={c.externalId}>
+                  {c.name}
                 </MenuItem>
               ))}
             </TextField>
@@ -148,7 +154,7 @@ export default function SubjectsManagement() {
               variant="outlined"
               onClick={() => setOpenAssign(true)}
             >
-              Assign to Grades
+              Assign to Classes
             </Button>
             <Button
               startIcon={<SettingsIcon />}
@@ -160,7 +166,7 @@ export default function SubjectsManagement() {
             <Button
               startIcon={<AddIcon />}
               variant="contained"
-              onClick={() => setOpenAdd(true)}
+              onClick={openCreate}
             >
               Add Subject
             </Button>
@@ -170,29 +176,32 @@ export default function SubjectsManagement() {
 
       <SubjectListing
         rows={filtered}
-        onEdit={(row) => setOpenEdit(row)}
-        onDelete={deleteSubject}
+        loading={loading}
+        onEdit={openEdit}
+        onDelete={askDelete}
       />
 
-      {/* Add */}
+      {/* Create/Edit */}
       <SubjectDialog
-        open={openAdd}
-        onCancel={() => setOpenAdd(false)}
-        onSave={(data) => {
-          upsertSubject(data);
-          setOpenAdd(false);
+        open={dialogMode === 'create' || dialogMode === 'edit'}
+        initial={dialogMode === 'edit' ? activeSubject : undefined}
+        onCancel={() => {
+          setDialogMode(null);
+          setActiveSubject(null);
         }}
+        onSave={handleSave}
       />
 
-      {/* Edit */}
-      <SubjectDialog
-        open={!!openEdit}
-        initial={openEdit ?? undefined}
-        onCancel={() => setOpenEdit(null)}
-        onSave={(data) => {
-          if (openEdit) upsertSubject(data, openEdit);
-          setOpenEdit(null);
+      {/* Delete confirm */}
+      <DeleteDialog
+        open={dialogMode === 'delete'}
+        title="Delete subject?"
+        subtitle={`You are about to delete "${activeSubject?.name ?? ''}".`}
+        onCancel={() => {
+          setDialogMode(null);
+          setActiveSubject(null);
         }}
+        onConfirm={confirmDelete}
       />
 
       {/* Assign */}
@@ -200,22 +209,12 @@ export default function SubjectsManagement() {
         open={openAssign}
         onClose={() => setOpenAssign(false)}
         allSubjects={subjects}
-        getAssignedForGrade={getAssignedForGrade}
-        onSave={(grade, subjectIds) => {
-          saveAssignments(grade, subjectIds);
-          setOpenAssign(false);
-        }}
       />
 
       {/* Boundaries */}
       <GradeBoundariesDialog
         open={openBoundaries}
-        initial={boundaries}
         onClose={() => setOpenBoundaries(false)}
-        onSave={(b) => {
-          setBoundaries(b);
-          setOpenBoundaries(false);
-        }}
       />
     </Stack>
   );

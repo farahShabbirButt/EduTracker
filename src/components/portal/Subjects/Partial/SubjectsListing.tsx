@@ -8,14 +8,14 @@ import {
   Delete as DeleteIcon,
   Edit as EditIcon,
 } from '@mui/icons-material';
-import type { Subject } from '../@types/subject.d';
+import type { ApiSubject } from '../@types/subject.d';
 import DropdownMenu from '../../../../common/DropdownMenu/DropdownMenu';
 
 type Props = {
-  rows: Subject[];
+  rows: ApiSubject[];
   loading?: boolean;
-  onEdit: (row: Subject) => void;
-  onDelete: (row: Subject) => void;
+  onEdit: (row: ApiSubject) => void;
+  onDelete: (row: ApiSubject) => void;
 };
 
 export default function SubjectListing({
@@ -24,27 +24,27 @@ export default function SubjectListing({
   onEdit,
   onDelete,
 }: Props) {
-  const columns = React.useMemo<GridColDef<Subject>[]>(
+  const columns = React.useMemo<GridColDef<ApiSubject>[]>(
     () => [
       { field: 'name', headerName: 'Subject', flex: 1, minWidth: 160 },
       {
-        field: 'defaultMaxMarks',
+        field: 'maxMarks',
         headerName: 'Max Marks',
         width: 130,
         renderCell: (p) => (
-          <Typography variant="body2">
-            {p.row.defaultMaxMarks ?? 100}
-          </Typography>
+          <Typography variant="body2">{p.row.maxMarks ?? 100}</Typography>
         ),
       },
       {
-        field: 'grades',
-        headerName: 'Assigned Grades',
+        field: 'classes',
+        headerName: 'Assigned Classes',
         flex: 1,
         minWidth: 200,
         renderCell: (p) => (
           <Typography variant="body2">
-            {p.row.grades?.length ? p.row.grades.join(', ') : '—'}
+            {p.row.classes?.length
+              ? p.row.classes.map((c) => c.name).join(', ')
+              : '—'}
           </Typography>
         ),
       },
@@ -97,7 +97,7 @@ export default function SubjectListing({
         initialState={{
           pagination: { paginationModel: { pageSize: 10 } },
         }}
-        getRowId={(r) => r.id}
+        getRowId={(r) => r.externalId}
       />
     </Box>
   );

@@ -16,6 +16,7 @@ import {
 import TestMarksEntry from './TestMarksEntry';
 import TestListTable from './TestTab/TestListTable';
 import TestModal from './TestTab/TestModal';
+import ConductEntry from './ConductEntry';
 
 export default function MonthlyDataManagement() {
   const [activeTab, setActiveTab] = useState(0);
@@ -49,6 +50,7 @@ export default function MonthlyDataManagement() {
             <Tabs value={activeTab} onChange={(_, val) => setActiveTab(val)}>
               <Tab label="Tests" />
               <Tab label="Marks Entry" />
+              <Tab label="Conduct" />
             </Tabs>
           </Stack>
         </CardContent>
@@ -72,6 +74,7 @@ export default function MonthlyDataManagement() {
         )}
 
         {activeTab === 1 && <TestMarksEntry />}
+        {activeTab === 2 && <ConductEntry />}
       </Box>
 
       <Modal open={openCreateModal} onClose={() => setOpenCreateModal(false)}>
