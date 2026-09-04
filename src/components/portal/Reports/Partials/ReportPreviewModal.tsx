@@ -1,143 +1,118 @@
+import { useEffect, useRef } from 'react';
 import {
   Box,
-  Typography,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  Divider,
   Modal,
+  CircularProgress,
+  Alert,
+  Stack,
+  Button,
+  IconButton,
 } from '@mui/material';
-import type { SampleReportCard } from '../../../../config/constants';
+import CloseIcon from '@mui/icons-material/Close';
+import PrintIcon from '@mui/icons-material/Print';
+import { useDispatch, useSelector } from 'react-redux';
+import { useReactToPrint } from 'react-to-print';
+import type { AppDispatch, RootState } from '../../../../redux/store';
+import { fetchReport, clearReport } from '../../../../redux/slices/reportSlice';
+import { ResultCard } from '../../../testers/ResultCard';
 
 interface IReportPreviewModalProps {
   open: boolean;
   onClose: () => void;
-  data: typeof SampleReportCard;
+  studentExternalId: string;
+  year: number;
 }
+
 const ReportPreviewModal = ({
   open,
   onClose,
-  data,
+  studentExternalId,
+  year,
 }: IReportPreviewModalProps) => {
-  const subjectList = Object.keys(data.tests[0].subjects);
+  const dispatch = useDispatch<AppDispatch>();
+  const { report, loading, error } = useSelector(
+    (state: RootState) => state.report
+  );
+  const printRef = useRef<HTMLDivElement | null>(null);
+
+  // Same working react-to-print pattern used by ResultCardPreview.
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: 'Result Card',
+  });
+
+  // Loads the real card whenever the modal opens for a given student/year.
+  // Aborts a still-in-flight request if closed before it resolves.
+  useEffect(() => {
+    if (!open) return;
+
+    const request = dispatch(fetchReport({ studentExternalId, year }));
+
+    return () => {
+      request.abort();
+    };
+  }, [dispatch, open, studentExternalId, year]);
+
+  // Clears the loaded card once the modal closes, so a stale card can't
+  // flash before the next fetch resolves.
+  useEffect(() => {
+    if (!open) {
+      dispatch(clearReport());
+    }
+  }, [dispatch, open]);
 
   return (
     <Modal open={open} onClose={onClose}>
       <Box
         sx={{
-          width: '80%',
+          width: '90%',
+          maxWidth: 1200,
           mx: 'auto',
           mt: 5,
-          bgcolor: '#fff',
+          mb: 5,
+          bgcolor: 'background.paper',
           p: 3,
           borderRadius: 2,
+          maxHeight: '85vh',
+          overflow: 'auto',
         }}
       >
-        {/* Header */}
-        <Typography variant="h5" align="center" fontWeight={700}>
-          MONTHLY ASSESSMENT REPORT
-        </Typography>
-        <Typography align="center" fontSize={14}>
-          FARRUKH ACADEMY OF SCIENCE
-        </Typography>
-        <Typography align="center" fontSize={12}>
-          Dhobi Ghat Stop Near Nafeerabad Graveyard Shalimar Town Lahore
-        </Typography>
+        <Stack
+          direction="row"
+          justifyContent="flex-end"
+          spacing={1}
+          className="no-print"
+          sx={{ mb: 2 }}
+        >
+          <Button
+            variant="contained"
+            startIcon={<PrintIcon />}
+            onClick={handlePrint}
+            disabled={!report}
+          >
+            Print Result Card
+          </Button>
+          <IconButton onClick={onClose}>
+            <CloseIcon />
+          </IconButton>
+        </Stack>
 
-        <Divider sx={{ my: 2 }} />
-
-        {/* Student Info */}
-        <Box display="flex" justifyContent="space-between" mb={2}>
-          <Box>
-            <Typography>
-              <b>STUDENT NAME:</b> {data.studentInfo.name}
-            </Typography>
-            <Typography>
-              <b>FATHER NAME:</b> {data.studentInfo.fatherName}
-            </Typography>
+        {loading && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
+            <CircularProgress />
           </Box>
-          <Box>
-            <Typography>
-              <b>CLASS:</b> {data.studentInfo.class}
-            </Typography>
-            <Typography>
-              <b>ROLL NO:</b> {data.studentInfo.rollNo}
-            </Typography>
-          </Box>
-        </Box>
+        )}
 
-        {/* Test Table */}
-        <Table size="small" sx={{ border: '1px solid #000' }}>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 700 }}>Test</TableCell>
-              {subjectList.map((sub) => (
-                <TableCell key={sub} sx={{ fontWeight: 700 }}>
-                  {sub}
-                </TableCell>
-              ))}
-              <TableCell sx={{ fontWeight: 700 }}>Total</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>%</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Grade</TableCell>
-            </TableRow>
-          </TableHead>
+        {!loading && error && <Alert severity="error">{error}</Alert>}
 
-          <TableBody>
-            {data.tests.map((t: any, idx) => (
-              <TableRow key={idx}>
-                <TableCell>{t.testName}</TableCell>
-                {subjectList.map((sub) => (
-                  <TableCell key={sub}>{t.subjects[sub]}</TableCell>
-                ))}
-                <TableCell>{t.total}</TableCell>
-                <TableCell>{t.percentage}%</TableCell>
-                <TableCell>{t.grade}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        <Divider sx={{ my: 2 }} />
-
-        {/* Behaviour Section */}
-        <Box display="flex" justifyContent="space-between" mb={2}>
-          <Typography>
-            <b>Behaviour:</b> {data.behaviour}
-          </Typography>
-          <Typography>
-            <b>Uniform:</b> {data.uniformCleanliness}
-          </Typography>
-        </Box>
-
-        {/* Overall Result */}
-        <Box mb={2}>
-          <Typography>
-            <b>Obtained Marks:</b> {data.overallResult.obtainedMarks}
-          </Typography>
-          <Typography>
-            <b>Total Marks:</b> {data.overallResult.totalMarks}
-          </Typography>
-          <Typography>
-            <b>Percentage:</b> {data.overallResult.percentage}%
-          </Typography>
-          <Typography>
-            <b>Grade:</b> {data.overallResult.grade}
-          </Typography>
-          <Typography>
-            <b>Status:</b> {data.overallResult.status}
-          </Typography>
-        </Box>
-
-        <Box>
-          <Typography>
-            <b>Remarks:</b>
-          </Typography>
-          <Typography>{data.overallResult.remarks}</Typography>
-        </Box>
+        {!loading && !error && report && (
+          <div className="page">
+            <ResultCard ref={printRef} data={report} />
+          </div>
+        )}
       </Box>
     </Modal>
   );
 };
+
 export default ReportPreviewModal;
