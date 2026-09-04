@@ -9,18 +9,14 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import type { Subject } from '../@types/subject.d';
+import type { ApiSubject, SubjectFormValues } from '../@types/subject.d';
 import { SubjectType } from '../../../../@types/global.d';
 
 type Props = {
   open: boolean;
-  initial?: Partial<Subject> | null;
+  initial?: Partial<ApiSubject> | null;
   onCancel: () => void;
-  onSave: (data: {
-    name: string;
-    defaultMaxMarks: number;
-    subjectType: SubjectType;
-  }) => void;
+  onSave: (data: SubjectFormValues) => void;
 };
 
 export default function SubjectDialog({
@@ -29,13 +25,13 @@ export default function SubjectDialog({
   onCancel,
   onSave,
 }: Props) {
-  const isEdit = !!initial?.id;
+  const isEdit = !!initial?.externalId;
   const [name, setName] = React.useState<string>(initial?.name ?? '');
   const [maxMarks, setMaxMarks] = React.useState<number>(
-    initial?.defaultMaxMarks ?? 100
+    initial?.maxMarks ?? 100
   );
   const [subjectType, setSubjectType] = React.useState<SubjectType>(
-    (initial as any)?.subjectType ?? SubjectType.COMPULSORY
+    initial?.subjectType ?? SubjectType.COMPULSORY
   );
 
   const [errors, setErrors] = React.useState<{
@@ -46,8 +42,8 @@ export default function SubjectDialog({
 
   React.useEffect(() => {
     setName(initial?.name ?? '');
-    setMaxMarks(initial?.defaultMaxMarks ?? 100);
-    setSubjectType((initial as any)?.subjectType ?? SubjectType.COMPULSORY);
+    setMaxMarks(initial?.maxMarks ?? 100);
+    setSubjectType(initial?.subjectType ?? SubjectType.COMPULSORY);
   }, [initial]);
 
   const validate = () => {
@@ -74,7 +70,7 @@ export default function SubjectDialog({
             helperText={errors.name}
           />
           <TextField
-            label="Default Max Marks"
+            label="Max Marks"
             type="number"
             value={maxMarks}
             onChange={(e) => setMaxMarks(Number(e.target.value))}
@@ -103,7 +99,7 @@ export default function SubjectDialog({
             if (!validate()) return;
             onSave({
               name: name.trim(),
-              defaultMaxMarks: Number(maxMarks),
+              maxMarks: Number(maxMarks),
               subjectType,
             });
           }}

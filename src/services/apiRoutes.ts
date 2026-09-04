@@ -15,6 +15,14 @@ export const SUBJECT_ROUTES = {
   DELETE_SUBJECT: (id: string) => `/subject/${id}`,
 };
 
+export const SUBJECT_CLASS_ROUTES = { ASSIGN: '/subject-class/assign' };
+export const GRADE_ROUTES = {
+  GET_ALL: '/grade-scale',
+  CREATE: '/grade-scale',
+  UPDATE: (id: string) => `/grade-scale/${id}`,
+  DELETE: (id: string) => `/grade-scale/${id}`,
+};
+
 export const CLASS_ROUTES = {
   CREATE_CLASS: '/class',
   UPDATE_CLASS: (id: string) => `/class/${id}`,
@@ -29,11 +37,20 @@ export const TEST_ROUTES = {
   GET_ALL_TESTS: '/test',
   GET_TEST_BY_ID: (id: string) => `/test/${id}`,
   DELETE_TEST: (id: string) => `/test/${id}`,
+  GET_TEST_SUBJECTS: (id: string) => `/test/${id}/subjects`,
+  SET_TEST_SUBJECTS: (id: string) => `/test/${id}/subjects`,
 };
 
 export const SCORE_ROUTES = {
   ENTER_MARKS: '/student-score/entry',
   GET_MARKS_ENTRY: (query: string) => `/student-score/entry?${query}`,
+};
+
+export const CONDUCT_ROUTES = {
+  GET_CONDUCT: (studentExternalId: string, query: string) =>
+    `/conduct/student/${studentExternalId}?${query}`,
+  SAVE_CONDUCT: (studentExternalId: string) =>
+    `/conduct/student/${studentExternalId}`,
 };
 
 export const AUTH_ROUTES = {
