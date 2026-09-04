@@ -27,7 +27,7 @@ const ResultCardPreview = () => {
       </Stack>
 
       <div className="page">
-        <ResultCard ref={printRef} data={ResultSampleData as any} />
+        <ResultCard ref={printRef} data={ResultSampleData} />
       </div>
     </Box>
   );

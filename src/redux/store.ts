@@ -15,6 +15,7 @@ import gradeReducer from './slices/gradeSlice';
 import testReducer from './slices/testSlice';
 import scoreReducer from './slices/scoreSlice';
 import conductReducer from './slices/conductSlice';
+import reportReducer from './slices/reportSlice';
 
 // Combine reducers
 const rootReducer = combineReducers({
@@ -26,6 +27,7 @@ const rootReducer = combineReducers({
   tests: testReducer,
   scores: scoreReducer,
   conduct: conductReducer,
+  report: reportReducer,
 });
 
 const store = configureStore({

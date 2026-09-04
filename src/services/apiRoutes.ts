@@ -53,6 +53,11 @@ export const CONDUCT_ROUTES = {
     `/conduct/student/${studentExternalId}`,
 };
 
+export const REPORT_ROUTES = {
+  STUDENT_REPORT: (id: string, query: string) =>
+    `/report/student/${id}?${query}`,
+};
+
 export const AUTH_ROUTES = {
   LOGIN: '/auth/login',
   LOGOUT: '/auth/logout',
