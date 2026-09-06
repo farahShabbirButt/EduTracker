@@ -40,7 +40,7 @@ const StudentModal = ({
     lastName: initial?.lastName ?? '',
     fatherName: initial?.fatherName ?? '',
     rollNumber: initial?.rollNumber ?? '',
-    classId: initial?.class?.externalId ?? '6', // Using externalId for class selection
+    classId: initial?.class?.externalId ?? classes[0]?.externalId ?? '', // Using externalId for class selection
     contactNo: initial?.contactNo ?? '',
     email: initial?.email ?? '',
   }));
@@ -58,11 +58,12 @@ const StudentModal = ({
         lastName: initial?.lastName ?? '',
         fatherName: initial?.fatherName ?? '',
         rollNumber: initial?.rollNumber ?? '',
-        classId: initial?.class?.externalId ?? '6',
+        classId: initial?.class?.externalId ?? classes[0]?.externalId ?? '',
         contactNo: initial?.contactNo ?? '',
         email: initial?.email ?? '',
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial]);
 
   const handleChange =
