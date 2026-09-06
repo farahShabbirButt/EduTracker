@@ -97,8 +97,3 @@ Frontend Developer | MERN Stack Learner
 ---
 
 ### ⭐ If you like this project, consider giving it a star on GitHub!
-
----
-
-Would you like me to make this version **Markdown-enhanced** (with badges, section dividers, and icons for each section — like what top portfolio repos use)?
-It’ll make your README look *visually premium and recruiter-friendly*.

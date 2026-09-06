@@ -25,9 +25,8 @@ import {
   editStudent,
   removeStudent,
 } from '../../../redux/slices/studentSlice';
-import type { ClassLevel } from '../../../@types/global.d';
+import { fetchClasses } from '../../../redux/slices/classSlice';
 import type { Student, StudentFormValues } from './@types/student.d';
-import { ClassLevels } from '../../../config/constants';
 import StudentModal from './Partials/StudentModal';
 import DeleteDialog from '../../../common/Dialogs/DeleteDialog/DeleteDialog';
 
@@ -46,6 +45,7 @@ const StudentsManagement = () => {
   const { students: rows, loading } = useSelector(
     (state: RootState) => state.students
   );
+  const { classes } = useSelector((state: RootState) => state.classes);
 
   const [dialogMode, setDialogMode] = useState<
     'create' | 'edit' | 'delete' | null
@@ -55,17 +55,25 @@ const StudentsManagement = () => {
 
   // filters
   const [search, setSearch] = useState('');
-  const [gradeFilter, setGradeFilter] = useState<ClassLevel | 'All'>('All');
+  const [classFilter, setClassFilter] = useState<string>('All');
   // Load data on mount
   useEffect(() => {
     dispatch(fetchStudents());
   }, [dispatch]);
 
+  useEffect(() => {
+    if (classes.length === 0) {
+      dispatch(fetchClasses());
+    }
+  }, [dispatch, classes.length]);
+
   // derived rows based on filters
   const filtered = useMemo(() => {
     let filteredRows = rows;
-    if (gradeFilter !== 'All') {
-      filteredRows = filteredRows.filter((r) => r.class?.name === gradeFilter);
+    if (classFilter !== 'All') {
+      filteredRows = filteredRows.filter(
+        (r) => r.class?.externalId === classFilter
+      );
     }
     const q = search.trim().toLowerCase();
     if (q) {
@@ -85,7 +93,7 @@ const StudentsManagement = () => {
       });
     }
     return filteredRows;
-  }, [rows, search, gradeFilter]);
+  }, [rows, search, classFilter]);
 
   const openCreate = () => {
     setDialogMode('create');
@@ -278,17 +286,15 @@ const StudentsManagement = () => {
             />
             <TextField
               select
-              label="ClassLevel"
-              value={gradeFilter}
-              onChange={(e) =>
-                setGradeFilter(e.target.value as ClassLevel | 'All')
-              }
+              label="Class"
+              value={classFilter}
+              onChange={(e) => setClassFilter(e.target.value)}
               sx={{ width: { xs: '100%', sm: 180 } }}
             >
               <MenuItem value="All">All</MenuItem>
-              {ClassLevels.map((g) => (
-                <MenuItem key={g} value={g}>
-                  {g}
+              {classes.map((c) => (
+                <MenuItem key={c.externalId} value={c.externalId}>
+                  {c.name}
                 </MenuItem>
               ))}
             </TextField>
