@@ -1,10 +1,9 @@
 export interface Class {
-  id: number;
   externalId: string;
   name: string;
   isActive: boolean;
-  students?: any[];
-  subjectClasses?: any[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ClassFormValues {
