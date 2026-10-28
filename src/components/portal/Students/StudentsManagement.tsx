@@ -18,6 +18,7 @@ import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
 import type { RootState, AppDispatch } from '../../../redux/store';
 import {
   fetchStudents,
@@ -105,24 +106,37 @@ const StudentsManagement = () => {
     setEditingRow(row);
   };
 
-  const handleSubmit = (payload: StudentFormValues) => {
-    if (dialogMode === 'create') {
-      dispatch(addStudent(payload));
-    } else if (editingRow) {
-      dispatch(
-        editStudent({ externalId: editingRow.externalId, data: payload })
-      );
+  const handleSubmit = async (payload: StudentFormValues) => {
+    const result =
+      dialogMode === 'edit' && editingRow
+        ? await dispatch(
+            editStudent({ externalId: editingRow.externalId, data: payload })
+          )
+        : await dispatch(addStudent(payload));
+
+    if (
+      addStudent.fulfilled.match(result) ||
+      editStudent.fulfilled.match(result)
+    ) {
+      toast.success(result.payload.message);
+      setDialogMode(null);
+    } else {
+      // Dialog stays open so the typed values aren't lost
+      toast.error((result.payload as string) || 'Failed to save student');
     }
-    setDialogMode(null);
   };
 
   const askDelete = (row: Student) => {
     setRowToDelete(row);
     setDialogMode('delete');
   };
-  const confirmDelete = () => {
-    if (rowToDelete) {
-      dispatch(removeStudent(rowToDelete.externalId));
+  const confirmDelete = async () => {
+    if (!rowToDelete) return;
+    const result = await dispatch(removeStudent(rowToDelete.externalId));
+    if (removeStudent.fulfilled.match(result)) {
+      toast.success(result.payload.message);
+    } else {
+      toast.error((result.payload as string) || 'Failed to delete student');
     }
     setDialogMode(null);
     setRowToDelete(null);
@@ -309,6 +323,7 @@ const StudentsManagement = () => {
           rows={filtered}
           columns={columns}
           loading={loading}
+          getRowId={(row) => row.externalId}
           disableRowSelectionOnClick
           pageSizeOptions={[5, 10, 25]}
           initialState={{

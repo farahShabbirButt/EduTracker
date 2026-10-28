@@ -34,6 +34,9 @@ const StudentModal = ({
 }: StudentFormDialogProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const { classes } = useSelector((state: RootState) => state.classes);
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof StudentFormValues, string>>
+  >({});
 
   const [values, setValues] = useState<StudentFormValues>(() => ({
     firstName: initial?.firstName ?? '',
@@ -62,6 +65,7 @@ const StudentModal = ({
         contactNo: initial?.contactNo ?? '',
         email: initial?.email ?? '',
       });
+      setErrors({});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial]);
@@ -70,13 +74,18 @@ const StudentModal = ({
     (key: keyof StudentFormValues) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setValues((p) => ({ ...p, [key]: e.target.value }));
+      setErrors((p) => ({ ...p, [key]: undefined }));
     };
 
   const handleSubmit = () => {
-    // minimal frontend validation
-    if (!values.firstName.trim()) return alert('First name is required');
-    if (!values.rollNumber.trim()) return alert('Roll number is required');
-    onSubmit(values);
+    // minimal frontend validation, shown inline under each field
+    const nextErrors: typeof errors = {};
+    if (!values.firstName.trim())
+      nextErrors.firstName = 'First name is required';
+    if (!values.rollNumber.trim())
+      nextErrors.rollNumber = 'Roll number is required';
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length === 0) onSubmit(values);
   };
 
   return (
@@ -91,6 +100,8 @@ const StudentModal = ({
               label="First Name"
               value={values.firstName}
               onChange={handleChange('firstName')}
+              error={!!errors.firstName}
+              helperText={errors.firstName}
               required
               fullWidth
               autoFocus
@@ -117,6 +128,8 @@ const StudentModal = ({
               label="Roll Number"
               value={values.rollNumber}
               onChange={handleChange('rollNumber')}
+              error={!!errors.rollNumber}
+              helperText={errors.rollNumber}
               required
               fullWidth
             />

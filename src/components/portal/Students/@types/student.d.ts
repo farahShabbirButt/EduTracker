@@ -1,5 +1,4 @@
 export interface Student {
-  id: number;
   externalId: string;
   firstName: string;
   lastName: string;
@@ -7,7 +6,6 @@ export interface Student {
   rollNumber: string;
   email?: string;
   contactNo?: string;
-  classId: number;
   class?: {
     name: string;
     externalId: string;

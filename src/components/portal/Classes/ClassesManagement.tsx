@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
 import type { RootState, AppDispatch } from '../../../redux/store';
 import {
   fetchClasses,
@@ -53,22 +54,31 @@ export default function ClassesManagement() {
     setClassToDelete(cls);
   };
 
-  const handleDeleteConfirm = () => {
-    if (classToDelete) {
-      dispatch(removeClass(classToDelete.externalId));
-      setClassToDelete(null);
+  const handleDeleteConfirm = async () => {
+    if (!classToDelete) return;
+    const result = await dispatch(removeClass(classToDelete.externalId));
+    if (removeClass.fulfilled.match(result)) {
+      toast.success(result.payload.message);
+    } else {
+      toast.error((result.payload as string) || 'Failed to delete class');
     }
+    setClassToDelete(null);
   };
 
-  const handleSave = (values: ClassFormValues) => {
-    if (editingClass) {
-      dispatch(
-        editClass({ externalId: editingClass.externalId, data: values })
-      );
+  const handleSave = async (values: ClassFormValues) => {
+    const result = editingClass
+      ? await dispatch(
+          editClass({ externalId: editingClass.externalId, data: values })
+        )
+      : await dispatch(addClass(values));
+
+    if (addClass.fulfilled.match(result) || editClass.fulfilled.match(result)) {
+      toast.success(result.payload.message);
+      setOpenDialog(false);
     } else {
-      dispatch(addClass(values));
+      // Dialog stays open so the typed name isn't lost
+      toast.error((result.payload as string) || 'Failed to save class');
     }
-    setOpenDialog(false);
   };
 
   return (
