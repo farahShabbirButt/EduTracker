@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
-  TextField,
   MenuItem,
   Button,
   Typography,
@@ -13,6 +12,8 @@ import {
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
+import { Controller, useForm, useWatch } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import type { AppDispatch, RootState } from '../../../../redux/store';
 import { MonthList } from '../../../../config/constants';
 import { TestType } from '../../../../@types/global.d';
@@ -25,12 +26,21 @@ import {
 } from '../../../../redux/slices/testSlice';
 import { fetchClasses } from '../../../../redux/slices/classSlice';
 import { fetchSubjects } from '../../../../redux/slices/subjectSlice';
+import FormTextField from '../../../../common/Form/FormTextField';
+import {
+  testFormSchema,
+  type TestFormInput,
+  type TestFormOutput,
+  type TestSubjectRow,
+} from '../../../../validation/test.schema';
 
-type SubjectRow = {
-  subjectExternalId: string;
-  name: string;
-  included: boolean;
-  maxMarks: number;
+const emptyForm: TestFormInput = {
+  name: '',
+  month: '',
+  year: new Date().getFullYear(),
+  classExternalId: '',
+  testType: TestType.MONTHLY,
+  subjects: [],
 };
 
 export default function TestModal({
@@ -53,15 +63,19 @@ export default function TestModal({
     ? tests.find((t) => t.externalId === editTestId)
     : null;
 
-  const [form, setForm] = useState({
-    name: '',
-    month: '',
-    year: new Date().getFullYear(),
-    classExternalId: '',
-    testType: TestType.MONTHLY,
+  const {
+    control,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<TestFormInput, unknown, TestFormOutput>({
+    resolver: zodResolver(testFormSchema),
+    defaultValues: emptyForm,
   });
-  const [subjectRows, setSubjectRows] = useState<SubjectRow[]>([]);
-  const [saving, setSaving] = useState(false);
+
+  const classExternalId = useWatch({ control, name: 'classExternalId' });
+  const subjectRows = useWatch({ control, name: 'subjects' });
 
   useEffect(() => {
     dispatch(fetchClasses());
@@ -70,12 +84,13 @@ export default function TestModal({
 
   useEffect(() => {
     if (existingTest) {
-      setForm({
+      reset({
         name: existingTest.name,
-        month: String(existingTest.month),
+        month: existingTest.month,
         year: existingTest.year,
         classExternalId: existingTest.class.externalId,
         testType: existingTest.testType,
+        subjects: [],
       });
       dispatch(fetchTestSubjects(existingTest.externalId));
     }
@@ -89,13 +104,13 @@ export default function TestModal({
   // this database aren't bare grade strings, so identity must go through
   // externalId, never a name comparison.
   useEffect(() => {
-    if (!form.classExternalId) {
-      setSubjectRows([]);
+    if (!classExternalId) {
+      setValue('subjects', []);
       return;
     }
 
     const classSubjects = subjects.filter((s) =>
-      s.classes?.some((c) => c.externalId === form.classExternalId)
+      s.classes?.some((c) => c.externalId === classExternalId)
     );
 
     const savedByExternalId = new Map(
@@ -104,7 +119,8 @@ export default function TestModal({
         : []
     );
 
-    setSubjectRows(
+    setValue(
+      'subjects',
       classSubjects.map((s) => {
         const savedMaxMarks = savedByExternalId.get(s.externalId);
         return {
@@ -117,80 +133,44 @@ export default function TestModal({
       })
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.classExternalId, subjects, testSubjects]);
-
-  const handleChange = (k: string, v: any) =>
-    setForm((prev) => ({ ...prev, [k]: v }));
-
-  const toggleSubject = (subjectExternalId: string) => {
-    setSubjectRows((prev) =>
-      prev.map((row) =>
-        row.subjectExternalId === subjectExternalId
-          ? { ...row, included: !row.included }
-          : row
-      )
-    );
-  };
-
-  const setSubjectMaxMarks = (subjectExternalId: string, value: number) => {
-    setSubjectRows((prev) =>
-      prev.map((row) =>
-        row.subjectExternalId === subjectExternalId
-          ? { ...row, maxMarks: value }
-          : row
-      )
-    );
-  };
-
-  const includedRows = useMemo(
-    () => subjectRows.filter((row) => row.included),
-    [subjectRows]
-  );
+  }, [classExternalId, subjects, testSubjects]);
 
   // Live derived total (spec §3.2b) — shown before saving since the backend
   // is the actual authority on `totalMarks` once it recomputes it.
   const derivedTotal = useMemo(
     () =>
-      includedRows.reduce((sum, row) => sum + (Number(row.maxMarks) || 0), 0),
-    [includedRows]
+      (subjectRows ?? [])
+        .filter((row) => row.included)
+        .reduce((sum, row) => sum + (Number(row.maxMarks) || 0), 0),
+    [subjectRows]
   );
 
-  const buildSubjectsPayload = (): TestSubjectInput[] =>
-    includedRows.map((row) => ({
-      subjectExternalId: row.subjectExternalId,
-      maxMarks: Number(row.maxMarks),
-    }));
+  const buildSubjectsPayload = (rows: TestSubjectRow[]): TestSubjectInput[] =>
+    rows
+      .filter((row) => row.included)
+      .map((row) => ({
+        subjectExternalId: row.subjectExternalId,
+        maxMarks: row.maxMarks,
+      }));
 
-  const handleSave = async () => {
-    if (!form.name.trim() || !form.month || !form.classExternalId) {
-      toast.error('Fill in the test name, month, and class.');
-      return;
-    }
-    if (includedRows.length === 0) {
-      toast.error('Include at least one subject.');
-      return;
-    }
-
-    setSaving(true);
-    const subjectsPayload = buildSubjectsPayload();
+  const onSubmit = async (form: TestFormOutput) => {
+    const subjectsPayload = buildSubjectsPayload(form.subjects);
+    const totalMarks = subjectsPayload.reduce((sum, s) => sum + s.maxMarks, 0);
+    const base = {
+      name: form.name,
+      testType: form.testType,
+      month: form.month,
+      year: form.year,
+      classExternalId: form.classExternalId,
+      totalMarks,
+    };
 
     if (editing && existingTest) {
       const baseResult = await dispatch(
-        editTest({
-          externalId: existingTest.externalId,
-          data: {
-            name: form.name,
-            testType: form.testType,
-            month: Number(form.month),
-            year: Number(form.year),
-            classExternalId: form.classExternalId,
-            totalMarks: derivedTotal,
-          },
-        })
+        editTest({ externalId: existingTest.externalId, data: base })
       );
       if (!editTest.fulfilled.match(baseResult)) {
         toast.error((baseResult.payload as string) || 'Failed to update test');
-        setSaving(false);
         return;
       }
 
@@ -200,7 +180,6 @@ export default function TestModal({
           subjects: subjectsPayload,
         })
       );
-      setSaving(false);
       if (!updateTestSubjects.fulfilled.match(subjectsResult)) {
         // e.g. 409 TEST_SUBJECT_HAS_SCORES — surface the backend's wording,
         // don't swallow it into a generic message.
@@ -216,17 +195,8 @@ export default function TestModal({
     }
 
     const result = await dispatch(
-      addTest({
-        name: form.name,
-        testType: form.testType,
-        month: Number(form.month),
-        year: Number(form.year),
-        classExternalId: form.classExternalId,
-        totalMarks: derivedTotal,
-        subjects: subjectsPayload,
-      })
+      addTest({ ...base, subjects: subjectsPayload })
     );
-    setSaving(false);
     if (addTest.fulfilled.match(result)) {
       toast.success(result.payload.message);
       onClose();
@@ -235,66 +205,70 @@ export default function TestModal({
     }
   };
 
+  // "Include at least one subject" is raised on the array itself, not a row
+  const subjectsError = (errors.subjects as { message?: string } | undefined)
+    ?.message;
+
   return (
-    <Box>
+    <Box component="form" noValidate onSubmit={handleSubmit(onSubmit)}>
       <Typography variant="h6" sx={{ mb: 2 }}>
         {editing ? 'Edit Test' : 'Add New Test'}
       </Typography>
 
-      <TextField
+      <FormTextField
+        name="name"
+        control={control}
         label="Test Name"
         fullWidth
         sx={{ mb: 2 }}
-        value={form.name}
-        onChange={(e) => handleChange('name', e.target.value)}
       />
 
-      <TextField
+      <FormTextField
+        name="month"
+        control={control}
         select
         fullWidth
         label="Select Month"
         sx={{ mb: 2 }}
-        value={form.month}
-        onChange={(e) => handleChange('month', e.target.value)}
       >
         {MonthList.map((m) => (
           <MenuItem key={m.value} value={m.value}>
             {m.label}
           </MenuItem>
         ))}
-      </TextField>
+      </FormTextField>
 
-      <TextField
+      <FormTextField
+        name="year"
+        control={control}
         type="number"
         label="Year"
         fullWidth
         sx={{ mb: 2 }}
-        value={form.year}
-        onChange={(e) => handleChange('year', e.target.value)}
       />
 
-      <TextField
+      <FormTextField
+        name="classExternalId"
+        control={control}
         select
         fullWidth
         label="Class"
         sx={{ mb: 2 }}
-        value={form.classExternalId}
-        onChange={(e) => handleChange('classExternalId', e.target.value)}
       >
         {classes.map((c) => (
           <MenuItem key={c.externalId} value={c.externalId}>
             {c.name}
           </MenuItem>
         ))}
-      </TextField>
+      </FormTextField>
 
-      <TextField
+      <FormTextField
+        name="testType"
+        control={control}
         select
         fullWidth
         label="Select Type"
         sx={{ mb: 2 }}
-        value={form.testType}
-        onChange={(e) => handleChange('testType', e.target.value)}
       >
         <MenuItem key={TestType.MONTHLY} value={TestType.MONTHLY}>
           Monthly
@@ -302,9 +276,9 @@ export default function TestModal({
         <MenuItem key={TestType.SESSION} value={TestType.SESSION}>
           Test Session
         </MenuItem>
-      </TextField>
+      </FormTextField>
 
-      {form.classExternalId && (
+      {classExternalId && (
         <Box sx={{ mb: 2 }}>
           <Divider sx={{ mb: 1.5 }} />
           <Typography variant="subtitle2" sx={{ mb: 1 }}>
@@ -321,40 +295,47 @@ export default function TestModal({
 
           {!testSubjectsLoading && subjectRows.length > 0 && (
             <Stack spacing={1}>
-              {subjectRows.map((row) => (
+              {subjectRows.map((row, i) => (
                 <Stack
                   key={row.subjectExternalId}
                   direction="row"
                   spacing={2}
                   alignItems="center"
                 >
-                  <FormControlLabel
-                    sx={{ minWidth: 200 }}
-                    control={
-                      <Checkbox
-                        checked={row.included}
-                        onChange={() => toggleSubject(row.subjectExternalId)}
+                  <Controller
+                    name={`subjects.${i}.included`}
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        sx={{ minWidth: 200 }}
+                        control={
+                          <Checkbox
+                            checked={!!field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                          />
+                        }
+                        label={row.name}
                       />
-                    }
-                    label={row.name}
+                    )}
                   />
-                  <TextField
+                  <FormTextField
+                    name={`subjects.${i}.maxMarks`}
+                    control={control}
                     type="number"
                     label="Max Marks"
                     size="small"
-                    value={row.maxMarks}
                     disabled={!row.included}
-                    onChange={(e) =>
-                      setSubjectMaxMarks(
-                        row.subjectExternalId,
-                        Number(e.target.value)
-                      )
-                    }
                     inputProps={{ min: 1 }}
                   />
                 </Stack>
               ))}
             </Stack>
+          )}
+
+          {subjectsError && (
+            <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+              {subjectsError}
+            </Typography>
           )}
 
           <Typography variant="subtitle2" sx={{ mt: 2 }}>
@@ -364,11 +345,11 @@ export default function TestModal({
       )}
 
       <Button
+        type="submit"
         variant="contained"
-        onClick={handleSave}
         fullWidth
         sx={{ mt: 1 }}
-        disabled={saving}
+        disabled={isSubmitting}
       >
         {editing ? 'Update Test' : 'Create Test'}
       </Button>
@@ -379,7 +360,7 @@ export default function TestModal({
         onClick={onClose}
         fullWidth
         sx={{ mt: 1 }}
-        disabled={saving}
+        disabled={isSubmitting}
       >
         Cancel
       </Button>

@@ -13,8 +13,8 @@ This is the EduTracker frontend SPA (Vite + React 19 + TS + MUI v7 + Redux Toolk
 
 ## Things that look broken but aren't
 
-- `App.tsx` hardcodes `const isAuthed = true; // TODO` — auth gating is intentionally stubbed. Don't "fix" it without a real auth flow.
-- `apiClient` does not inject any auth header. The backend already reads `user-external-id` from headers — if you wire auth, add it inside `ApiClient.request` so every call gets it.
+- `apiClient` sends no `Authorization` header on purpose — auth is an httpOnly cookie the browser attaches via `credentials: 'include'`. There is no token for JS to read; session state comes from `GET /auth/me` (`fetchMe` in `App.tsx`).
+- DataGrid tables use `getRowId={(row) => row.externalId}` — API responses don't include the internal numeric `id`, so a grid without `getRowId` breaks.
 - Routes `/theme` and `/preview` are dev-only previews (theme tokens, `ResultCardPreview`). Leave them out of any route guard or sitemap logic.
 - `main.tsx` imports `print.css` purely for the side effect (drives the `react-to-print` PDF flow on `ResultCardPreview`). Don't remove it.
 
