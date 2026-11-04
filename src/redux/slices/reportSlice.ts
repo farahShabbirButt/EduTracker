@@ -5,7 +5,10 @@ import {
   type ApiResponse,
 } from '../../services/apiClient';
 import { REPORT_ROUTES } from '../../services/apiRoutes';
-import type { IReportCard } from '../../components/portal/Reports/@types/reportCard.d';
+import type {
+  IReportCard,
+  IReportPeriod,
+} from '../../components/portal/Reports/@types/reportCard.d';
 
 interface ReportState {
   report: IReportCard | null;
@@ -26,7 +29,7 @@ const initialState: ReportState = {
 // rejects it with a 400, and the UI never offers it as a selectable option.
 export type FetchReportParams = {
   studentExternalId: string;
-  year: number;
+  period: IReportPeriod;
 };
 
 export const fetchReport = createAsyncThunk(
@@ -35,14 +38,17 @@ export const fetchReport = createAsyncThunk(
     try {
       const query = new URLSearchParams({
         mode: 'MONTHLY',
-        year: String(params.year),
+        fromMonth: String(params.period.from.month),
+        fromYear: String(params.period.from.year),
+        toMonth: String(params.period.to.month),
+        toYear: String(params.period.to.year),
       }).toString();
       const response = await apiClient.get<ApiResponse<'report', IReportCard>>(
         REPORT_ROUTES.STUDENT_REPORT(params.studentExternalId, query),
         { signal }
       );
-      // A year with no data is a normal 200 (rows: [], overall all zeros,
-      // position: null) — not an error, and rendered as-is by ResultCard.
+      // A period with no data is a normal 200 (rows: [], position: null), not
+      // an error. The preview says so.
       return response[response.keyName];
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to load report'));

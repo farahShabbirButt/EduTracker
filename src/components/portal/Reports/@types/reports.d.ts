@@ -1,6 +1,9 @@
 interface IReportSettings {
   reportMode: TestType;
   classId: string;
-  year: number;
+  fromMonth: number;
+  fromYear: number;
+  toMonth: number;
+  toYear: number;
   studentIds: string[];
 }

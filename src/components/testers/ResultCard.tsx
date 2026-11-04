@@ -13,7 +13,11 @@ import {
   ThemeProvider,
   createTheme,
 } from '@mui/material';
-import type { IReportCard } from '../portal/Reports/@types/reportCard.d';
+import type {
+  IReportCard,
+  IReportPeriod,
+} from '../portal/Reports/@types/reportCard.d';
+import { MonthList } from '../../config/constants';
 import { CONDUCT_RATING_OPTIONS } from '../portal/MonthlyData/@types/conduct.d';
 
 type ResultCardProps = {
@@ -30,6 +34,12 @@ const conductLabel = (rating: string | null) =>
   CONDUCT_RATING_OPTIONS.find((option) => option.value === rating)?.label ??
   rating ??
   '—';
+
+const periodMonth = ({ month, year }: { month: number; year: number }) =>
+  `${MonthList.find((m) => m.value === month)?.label ?? month} ${year}`;
+
+const periodLabel = (period: IReportPeriod) =>
+  `${periodMonth(period.from)} to ${periodMonth(period.to)}`;
 
 export const ResultCard = forwardRef<HTMLDivElement, ResultCardProps>(
   ({ data }, ref) => {
@@ -53,8 +63,11 @@ export const ResultCard = forwardRef<HTMLDivElement, ResultCardProps>(
             </Typography>
           </Box>
 
-          <Typography align="center" sx={{ fontWeight: 700, mb: 1 }}>
+          <Typography align="center" sx={{ fontWeight: 700 }}>
             {data.title}
+          </Typography>
+          <Typography align="center" variant="body2" sx={{ mb: 1 }}>
+            {periodLabel(data.period)}
           </Typography>
 
           {/* Student info */}
@@ -117,12 +130,11 @@ export const ResultCard = forwardRef<HTMLDivElement, ResultCardProps>(
               </TableHead>
               <TableBody>
                 {data.rows.map((row) => (
-                  <TableRow key={row.testName}>
+                  <TableRow key={row.testExternalId}>
                     <TableCell sx={{ border }}>{row.testName}</TableCell>
                     {subjectList.map((s) => {
-                      // Present in `marks` -> render obtained. Absent -> the
-                      // subject wasn't examined in this test, render a blank
-                      // cell. A blank and a zero are different facts.
+                      // No mark entered, or the subject wasn't examined:
+                      // blank. A blank and a zero are different facts.
                       const cell = row.marks[s.externalId];
                       return (
                         <TableCell
@@ -130,18 +142,18 @@ export const ResultCard = forwardRef<HTMLDivElement, ResultCardProps>(
                           align="center"
                           sx={{ border }}
                         >
-                          {cell ? cell.obtained : ''}
+                          {cell?.obtained ?? ''}
                         </TableCell>
                       );
                     })}
                     <TableCell align="center" sx={{ border }}>
-                      {row.total}
+                      {row.maxTotal ? row.total : ''}
                     </TableCell>
                     <TableCell align="center" sx={{ border }}>
-                      {row.percentage.toFixed(2)}
+                      {row.percentage?.toFixed(2) ?? ''}
                     </TableCell>
                     <TableCell align="center" sx={{ border }}>
-                      {row.grade}
+                      {row.grade ?? ''}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -158,11 +170,13 @@ export const ResultCard = forwardRef<HTMLDivElement, ResultCardProps>(
                       align="center"
                       sx={{ border, fontWeight: 700 }}
                     >
-                      {data.subjectTotals[s.externalId]?.obtained ?? 0}
+                      {data.subjectTotals[s.externalId]?.max
+                        ? data.subjectTotals[s.externalId].obtained
+                        : ''}
                     </TableCell>
                   ))}
                   <TableCell align="center" sx={{ border, fontWeight: 700 }}>
-                    {data.overall.obtainedMarks}
+                    {data.overall.totalMarks ? data.overall.obtainedMarks : ''}
                   </TableCell>
                   <TableCell align="center" sx={{ border }} />
                   <TableCell align="center" sx={{ border }} />
@@ -172,7 +186,7 @@ export const ResultCard = forwardRef<HTMLDivElement, ResultCardProps>(
           ) : (
             <Box sx={{ border, p: 2, textAlign: 'center' }}>
               <Typography color="text.secondary">
-                No test records found for this year.
+                No test records found for this period.
               </Typography>
             </Box>
           )}
@@ -204,28 +218,34 @@ export const ResultCard = forwardRef<HTMLDivElement, ResultCardProps>(
                     <TableRow>
                       <TableCell>Obtained Marks</TableCell>
                       <TableCell align="right">
-                        {data.overall.obtainedMarks}
+                        {data.overall.totalMarks
+                          ? data.overall.obtainedMarks
+                          : '—'}
                       </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell>Total Marks</TableCell>
                       <TableCell align="right">
-                        {data.overall.totalMarks}
+                        {data.overall.totalMarks || '—'}
                       </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell>%</TableCell>
                       <TableCell align="right">
-                        {data.overall.percentage.toFixed(2)}
+                        {data.overall.percentage?.toFixed(2) ?? '—'}
                       </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell>Grade</TableCell>
-                      <TableCell align="right">{data.overall.grade}</TableCell>
+                      <TableCell align="right">
+                        {data.overall.grade ?? '—'}
+                      </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell>Status</TableCell>
-                      <TableCell align="right">{data.overall.status}</TableCell>
+                      <TableCell align="right">
+                        {data.overall.status ?? '—'}
+                      </TableCell>
                     </TableRow>
                     {data.position && (
                       <TableRow>

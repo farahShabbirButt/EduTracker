@@ -22,6 +22,7 @@ import testReducer, { fetchTestSubjects, fetchTests } from './slices/testSlice';
 import scoreReducer from './slices/scoreSlice';
 import conductReducer from './slices/conductSlice';
 import reportReducer from './slices/reportSlice';
+import instituteReducer, { fetchInstitute } from './slices/instituteSlice';
 
 // Combine reducers
 const rootReducer = combineReducers({
@@ -30,6 +31,7 @@ const rootReducer = combineReducers({
   classes: classReducer,
   subjects: subjectReducer,
   grades: gradeReducer,
+  institute: instituteReducer,
   tests: testReducer,
   scores: scoreReducer,
   conduct: conductReducer,
@@ -43,6 +45,7 @@ const isFailedListLoad = isRejected(
   fetchClasses,
   fetchSubjects,
   fetchGradeScales,
+  fetchInstitute,
   fetchTests,
   fetchTestSubjects
 );

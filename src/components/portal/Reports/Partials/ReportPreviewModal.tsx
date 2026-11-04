@@ -15,19 +15,20 @@ import { useReactToPrint } from 'react-to-print';
 import type { AppDispatch, RootState } from '../../../../redux/store';
 import { fetchReport, clearReport } from '../../../../redux/slices/reportSlice';
 import { ResultCard } from '../../../testers/ResultCard';
+import type { IReportPeriod } from '../@types/reportCard.d';
 
 interface IReportPreviewModalProps {
   open: boolean;
   onClose: () => void;
   studentExternalId: string;
-  year: number;
+  period: IReportPeriod;
 }
 
 const ReportPreviewModal = ({
   open,
   onClose,
   studentExternalId,
-  year,
+  period,
 }: IReportPreviewModalProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const { report, loading, error } = useSelector(
@@ -35,6 +36,7 @@ const ReportPreviewModal = ({
   );
   const printRef = useRef<HTMLDivElement | null>(null);
   const hasTests = !!report && report.rows.length > 0;
+  const missingMarks = report?.missingMarks ?? [];
 
   // Same working react-to-print pattern used by ResultCardPreview.
   const handlePrint = useReactToPrint({
@@ -45,17 +47,17 @@ const ReportPreviewModal = ({
       : 'Result Card',
   });
 
-  // Loads the real card whenever the modal opens for a given student/year.
+  // Loads the real card whenever the modal opens for a student and period.
   // Aborts a still-in-flight request if closed before it resolves.
   useEffect(() => {
     if (!open) return;
 
-    const request = dispatch(fetchReport({ studentExternalId, year }));
+    const request = dispatch(fetchReport({ studentExternalId, period }));
 
     return () => {
       request.abort();
     };
-  }, [dispatch, open, studentExternalId, year]);
+  }, [dispatch, open, studentExternalId, period]);
 
   // Clears the loaded card once the modal closes, so a stale card can't
   // flash before the next fetch resolves.
@@ -111,7 +113,28 @@ const ReportPreviewModal = ({
 
         {!loading && !error && report && !hasTests && (
           <Alert severity="info">
-            No tests found for {year}, so there is no result card to print.
+            No tests found for this period, so there is no result card to print.
+          </Alert>
+        )}
+
+        {!loading && !error && hasTests && missingMarks.length > 0 && (
+          <Alert severity="warning" className="no-print" sx={{ mb: 2 }}>
+            This card is incomplete: {missingMarks.length} mark
+            {missingMarks.length === 1 ? ' is' : 's are'} not entered, so{' '}
+            {missingMarks.length === 1 ? 'it prints' : 'they print'} blank and
+            {missingMarks.length === 1 ? " isn't" : " aren't"} counted.{' '}
+            {missingMarks
+              .slice(0, 5)
+              .map((m) => `${m.testName}: ${m.subjectName}`)
+              .join(', ')}
+            {missingMarks.length > 5 && ` and ${missingMarks.length - 5} more`}
+          </Alert>
+        )}
+
+        {!loading && !error && report?.position?.provisional && (
+          <Alert severity="warning" className="no-print" sx={{ mb: 2 }}>
+            Position may change: some students in this class still have marks to
+            enter.
           </Alert>
         )}
 

@@ -1,22 +1,25 @@
 import {
+  Alert,
   Button,
-  Chip,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
+  FormGroup,
   Grid,
   MenuItem,
-  Stack,
+  Typography,
 } from '@mui/material';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import SubjectIcon from '@mui/icons-material/LibraryBooks';
 import type { Student, StudentFormValues } from '../@types/student.d';
 import type { RootState, AppDispatch } from '../../../../redux/store';
 import { fetchClasses } from '../../../../redux/slices/classSlice';
+import { fetchSubjects } from '../../../../redux/slices/subjectSlice';
 import FormTextField from '../../../../common/Form/FormTextField';
 import {
   studentFormSchema,
@@ -43,6 +46,11 @@ const StudentModal = ({
 }: StudentFormDialogProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const { classes } = useSelector((state: RootState) => state.classes);
+  const {
+    subjects,
+    loading: subjectsLoading,
+    error: subjectsError,
+  } = useSelector((state: RootState) => state.subjects);
 
   const valuesFrom = (student?: Partial<Student>): StudentFormInput => ({
     firstName: student?.firstName ?? '',
@@ -52,6 +60,10 @@ const StudentModal = ({
     classId: student?.class?.externalId ?? classes[0]?.externalId ?? '', // Using externalId for class selection
     contactNo: student?.contactNo ?? '',
     email: student?.email ?? '',
+    electiveSubjectIds:
+      student?.subjects
+        ?.filter((s) => s.subjectType === 'ELECTIVE')
+        .map((s) => s.externalId) ?? [],
   });
 
   const {
@@ -71,15 +83,40 @@ const StudentModal = ({
   }, [dispatch, classes.length]);
 
   useEffect(() => {
+    if (open) dispatch(fetchSubjects());
+  }, [dispatch, open]);
+
+  useEffect(() => {
     if (open) reset(valuesFrom(initial));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial]);
+
+  const selectedClassId = useWatch({ control, name: 'classId' });
+  const subjectsReady = !subjectsLoading && !subjectsError;
+  const classElectives = subjects.filter(
+    (s) =>
+      s.subjectType === 'ELECTIVE' &&
+      s.classes?.some((c) => c.externalId === selectedClassId)
+  );
+
+  // Only electives of the chosen class go out, so changing class drops the old ones
+  const toPayload = (values: StudentFormOutput): StudentFormValues => {
+    const { electiveSubjectIds, ...rest } = toStudentPayload(values);
+    return subjectsReady
+      ? {
+          ...rest,
+          electiveSubjectIds: electiveSubjectIds.filter((id) =>
+            classElectives.some((s) => s.externalId === id)
+          ),
+        }
+      : rest;
+  };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <form
         noValidate
-        onSubmit={handleSubmit((values) => onSubmit(toStudentPayload(values)))}
+        onSubmit={handleSubmit((values) => onSubmit(toPayload(values)))}
       >
         <DialogTitle>
           {mode === 'create' ? 'Add New Student' : 'Edit Student'}
@@ -165,17 +202,53 @@ const StudentModal = ({
               />
             </Grid>
 
-            {/* Assign subjects (placeholder for now) */}
             <Grid size={12}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <SubjectIcon fontSize="small" />
-                <Chip
-                  label="Assign Subjects (coming soon)"
-                  color="default"
-                  variant="outlined"
-                  disabled
+              <Typography variant="subtitle2" gutterBottom>
+                Electives
+              </Typography>
+              {subjectsError ? (
+                <Alert severity="warning">
+                  Subjects couldn't load, so electives can't be changed.
+                  Changing class removes them.
+                </Alert>
+              ) : subjectsLoading ? (
+                <Typography variant="body2" color="text.secondary">
+                  Loading subjects…
+                </Typography>
+              ) : classElectives.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  This class has no electives.
+                </Typography>
+              ) : (
+                <Controller
+                  name="electiveSubjectIds"
+                  control={control}
+                  render={({ field }) => (
+                    <FormGroup row>
+                      {classElectives.map((s) => (
+                        <FormControlLabel
+                          key={s.externalId}
+                          label={s.name}
+                          control={
+                            <Checkbox
+                              checked={field.value.includes(s.externalId)}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.checked
+                                    ? [...field.value, s.externalId]
+                                    : field.value.filter(
+                                        (id) => id !== s.externalId
+                                      )
+                                )
+                              }
+                            />
+                          }
+                        />
+                      ))}
+                    </FormGroup>
+                  )}
                 />
-              </Stack>
+              )}
             </Grid>
           </Grid>
         </DialogContent>
@@ -183,7 +256,11 @@ const StudentModal = ({
           <Button variant="contained" onClick={onClose} color="secondary">
             Cancel
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={isSubmitting || subjectsLoading}
+          >
             {mode === 'create' ? 'Add Student' : 'Save Changes'}
           </Button>
         </DialogActions>
