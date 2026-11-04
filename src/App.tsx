@@ -16,6 +16,7 @@ import StudentsManagement from './components/portal/Students/StudentsManagement'
 import SubjectsManagement from './components/portal/Subjects/SubjectsManagement';
 import MonthlyDataManagement from './components/portal/MonthlyData/MonthlyDataManagement';
 import ReportsManagement from './components/portal/Reports/ReportsManagement';
+import SchoolDetails from './components/portal/Settings/SchoolDetails';
 import ClassesManagement from './components/portal/Classes/ClassesManagement';
 import type { AppDispatch, RootState } from './redux/store';
 import { fetchMe } from './redux/slices/authSlice';
@@ -106,10 +107,7 @@ function App() {
               path={routes.portal.reports}
               element={<ReportsManagement />}
             />
-            <Route
-              path={routes.portal.settings}
-              element={<div>Settings</div>}
-            />
+            <Route path={routes.portal.settings} element={<SchoolDetails />} />
           </Route>
         </Route>
       </Routes>

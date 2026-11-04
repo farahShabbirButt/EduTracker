@@ -29,6 +29,7 @@ export const ResultSampleData: IReportCard = {
   ],
   rows: [
     {
+      testExternalId: 'sample-test-1',
       testName: 'Test 1',
       marks: {
         maths: { obtained: 30, max: 30 },
@@ -46,6 +47,7 @@ export const ResultSampleData: IReportCard = {
       grade: 'A+',
     },
     {
+      testExternalId: 'sample-test-2',
       testName: 'Test 2',
       marks: {
         maths: { obtained: 22, max: 30 },
@@ -63,6 +65,7 @@ export const ResultSampleData: IReportCard = {
       grade: 'A+',
     },
     {
+      testExternalId: 'sample-test-3',
       testName: 'Test 3',
       marks: {
         maths: { obtained: 23, max: 30 },
@@ -80,6 +83,7 @@ export const ResultSampleData: IReportCard = {
       grade: 'A+',
     },
     {
+      testExternalId: 'sample-test-4',
       testName: 'Test 4',
       marks: {
         maths: { obtained: 29, max: 30 },
@@ -97,6 +101,7 @@ export const ResultSampleData: IReportCard = {
       grade: 'A+',
     },
     {
+      testExternalId: 'sample-test-5',
       testName: 'Test 5',
       marks: {
         maths: { obtained: 28, max: 30 },
@@ -114,6 +119,7 @@ export const ResultSampleData: IReportCard = {
       grade: 'A+',
     },
     {
+      testExternalId: 'sample-test-6',
       testName: 'Test 6',
       marks: {
         maths: { obtained: 26, max: 30 },
@@ -131,6 +137,7 @@ export const ResultSampleData: IReportCard = {
       grade: 'A+',
     },
     {
+      testExternalId: 'sample-test-7',
       testName: 'Test 7',
       marks: {
         maths: { obtained: 27, max: 30 },
@@ -148,6 +155,7 @@ export const ResultSampleData: IReportCard = {
       grade: 'A+',
     },
     {
+      testExternalId: 'sample-test-8',
       testName: 'Test 8',
       // Al Quran and Islamiat were not examined in this test — their keys are
       // omitted entirely (not zeroed) so the card renders blank cells.
@@ -188,7 +196,9 @@ export const ResultSampleData: IReportCard = {
     behaviour: 'Excellent',
     uniformCleanliness: 'Excellent',
   },
-  position: { rank: 2, outOf: 35 },
+  position: { rank: 2, outOf: 35, provisional: false },
+  period: { from: { month: 1, year: 2025 }, to: { month: 12, year: 2025 } },
+  missingMarks: [],
 };
 
 // test Data constants

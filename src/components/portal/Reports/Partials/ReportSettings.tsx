@@ -1,4 +1,5 @@
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -17,6 +18,7 @@ import {
 import { useSelector } from 'react-redux';
 import { TestType } from '../../../../@types/global.d';
 import type { RootState } from '../../../../redux/store';
+import { MonthList } from '../../../../config/constants';
 
 interface IReportSettingsProps {
   reportSettings: IReportSettings;
@@ -24,10 +26,9 @@ interface IReportSettingsProps {
   handleChangeSettings: (e: SelectChangeEvent<string | string[]>) => void;
 }
 
-// A school won't have monthly data far outside "now" — the year is a plain
-// filter on the report endpoint, not something derived from loaded data.
-const currentYear = new Date().getFullYear();
-const YEAR_OPTIONS = Array.from({ length: 6 }, (_, i) => currentYear - i);
+// Next year is here because a school year can end in it
+const nextYear = new Date().getFullYear() + 1;
+const YEAR_OPTIONS = Array.from({ length: 7 }, (_, i) => nextYear - i);
 
 const ReportSettings = ({
   reportSettings,
@@ -43,6 +44,10 @@ const ReportSettings = ({
   const classStudents = students.filter(
     (s) => s.class?.externalId === reportSettings.classId
   );
+
+  const periodValid =
+    reportSettings.fromYear * 12 + reportSettings.fromMonth <=
+    reportSettings.toYear * 12 + reportSettings.toMonth;
 
   return (
     <Card>
@@ -72,14 +77,31 @@ const ReportSettings = ({
             </FormControl>
           </Grid>
 
-          {/* Year Selection */}
-          <Grid size={{ xs: 12, md: 4 }}>
+          {/* Period, filled in from the school year */}
+          <Grid size={{ xs: 6, md: 3 }}>
             <FormControl fullWidth>
-              <InputLabel>Year</InputLabel>
+              <InputLabel>From Month</InputLabel>
               <Select
-                name="year"
-                value={String(reportSettings?.year)}
-                label="Year"
+                name="fromMonth"
+                value={String(reportSettings.fromMonth)}
+                label="From Month"
+                onChange={handleChangeSettings}
+              >
+                {MonthList.map((m) => (
+                  <MenuItem key={m.value} value={String(m.value)}>
+                    {m.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 6, md: 3 }}>
+            <FormControl fullWidth>
+              <InputLabel>From Year</InputLabel>
+              <Select
+                name="fromYear"
+                value={String(reportSettings.fromYear)}
+                label="From Year"
                 onChange={handleChangeSettings}
               >
                 {YEAR_OPTIONS.map((y) => (
@@ -90,6 +112,47 @@ const ReportSettings = ({
               </Select>
             </FormControl>
           </Grid>
+          <Grid size={{ xs: 6, md: 3 }}>
+            <FormControl fullWidth>
+              <InputLabel>To Month</InputLabel>
+              <Select
+                name="toMonth"
+                value={String(reportSettings.toMonth)}
+                label="To Month"
+                onChange={handleChangeSettings}
+              >
+                {MonthList.map((m) => (
+                  <MenuItem key={m.value} value={String(m.value)}>
+                    {m.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 6, md: 3 }}>
+            <FormControl fullWidth>
+              <InputLabel>To Year</InputLabel>
+              <Select
+                name="toYear"
+                value={String(reportSettings.toYear)}
+                label="To Year"
+                onChange={handleChangeSettings}
+              >
+                {YEAR_OPTIONS.map((y) => (
+                  <MenuItem key={y} value={String(y)}>
+                    {y}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          {!periodValid && (
+            <Grid size={12}>
+              <Alert severity="warning">
+                The To month can't be before the From month.
+              </Alert>
+            </Grid>
+          )}
 
           {/* Class Selection */}
           <Grid size={{ xs: 12, md: 4 }}>
@@ -152,7 +215,7 @@ const ReportSettings = ({
         </Grid>
         <Box sx={{ display: 'flex', mt: 2, justifyContent: 'end' }}>
           <Button
-            disabled={reportSettings?.studentIds?.length === 0}
+            disabled={reportSettings?.studentIds?.length === 0 || !periodValid}
             variant="contained"
             onClick={handleGenerateReport}
           >

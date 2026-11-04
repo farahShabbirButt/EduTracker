@@ -53,6 +53,8 @@ export const CONDUCT_ROUTES = {
     `/conduct/student/${studentExternalId}`,
 };
 
+export const INSTITUTE_ROUTES = { GET: '/institute', SAVE: '/institute' };
+
 export const REPORT_ROUTES = {
   STUDENT_REPORT: (id: string, query: string) =>
     `/report/student/${id}?${query}`,

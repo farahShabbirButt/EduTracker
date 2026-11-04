@@ -26,4 +26,6 @@ export type StudentFormValues = {
   classId: string; // Used for the select dropdown (externalId)
   contactNo?: string;
   email?: string;
+  // Left out when the subject list isn't loaded, so saved electives aren't wiped
+  electiveSubjectIds?: string[];
 };

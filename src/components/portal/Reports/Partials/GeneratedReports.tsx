@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 
 import { Visibility as PreviewIcon } from '@mui/icons-material';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../redux/store';
 import ReportPreviewModal from './ReportPreviewModal';
@@ -22,6 +22,15 @@ const GeneratedReports = ({ reportSettings }: IGeneratedReportsProps) => {
   const [activeStudentExternalId, setActiveStudentExternalId] = useState<
     string | null
   >(null);
+
+  const { fromMonth, fromYear, toMonth, toYear } = reportSettings;
+  const period = useMemo(
+    () => ({
+      from: { month: fromMonth, year: fromYear },
+      to: { month: toMonth, year: toYear },
+    }),
+    [fromMonth, fromYear, toMonth, toYear]
+  );
 
   // Resolve the selected externalIds back to the real student records —
   // studentIds only ever carries externalIds, never display names.
@@ -71,7 +80,7 @@ const GeneratedReports = ({ reportSettings }: IGeneratedReportsProps) => {
           open={previewOpen}
           onClose={() => setPreviewOpen(false)}
           studentExternalId={activeStudentExternalId}
-          year={reportSettings.year}
+          period={period}
         />
       )}
     </>

@@ -166,6 +166,7 @@ export default function TestMarksEntry() {
     if (Number.isNaN(value)) return 'Enter a number';
     if (value < 0) return 'Cannot be negative';
     if (value > maxMarks) return `Cannot exceed ${maxMarks}`;
+    if (!Number.isInteger(value * 2)) return 'Whole or half marks only';
     return null;
   };
 
@@ -330,6 +331,17 @@ export default function TestMarksEntry() {
                     <TableCell>{st.rollNumber}</TableCell>
                     <TableCell>
                       {st.firstName} {st.lastName}
+                      {st.leftSubject && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                        >
+                          No longer in this class or subject.
+                          {st.marksObtained !== null &&
+                            ' Mark kept on their card.'}
+                        </Typography>
+                      )}
                     </TableCell>
                     <TableCell>
                       <TextField
@@ -342,6 +354,7 @@ export default function TestMarksEntry() {
                         inputProps={{
                           min: 0,
                           max: maxMarks,
+                          step: 0.5,
                           onInput: (e) =>
                             handleMarkInput(st.externalId, e.currentTarget),
                         }}

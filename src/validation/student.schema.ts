@@ -35,6 +35,7 @@ export const studentFormSchema = z.object({
     .string()
     .trim()
     .pipe(z.union([z.literal(''), z.email('Enter a valid email address')])),
+  electiveSubjectIds: z.array(z.string()),
 });
 
 export type StudentFormInput = z.input<typeof studentFormSchema>;

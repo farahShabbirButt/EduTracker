@@ -16,6 +16,8 @@ export type MarksEntryStudent = {
   fatherName: string;
   rollNumber: string;
   marksObtained: number | null;
+  // On the sheet only for a saved mark: they've left this class or subject
+  leftSubject: boolean;
 };
 
 export type MarksEntryData = {
