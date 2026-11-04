@@ -1,5 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { apiClient, ApiEnvelopeError } from '../../services/apiClient';
+import {
+  apiClient,
+  messageFrom,
+  type ApiMessage,
+  type ApiResponse,
+} from '../../services/apiClient';
 import { TEST_ROUTES } from '../../services/apiRoutes';
 import type {
   ApiTest,
@@ -12,24 +17,24 @@ import type {
 interface TestState {
   tests: ApiTest[];
   loading: boolean;
+  // Latest fetch only: an aborted or superseded one must not touch the state
+  requestId: string | null;
   error: string | null;
   testSubjects: ApiTestSubject[];
   testSubjectsLoading: boolean;
+  // Latest fetch only: an aborted or superseded one must not touch the state
+  testSubjectsRequestId: string | null;
 }
 
 const initialState: TestState = {
   tests: [],
   loading: false,
+  requestId: null,
   error: null,
   testSubjects: [],
   testSubjectsLoading: false,
+  testSubjectsRequestId: null,
 };
-
-// Surfaces the backend's wording rather than inventing our own (CLAUDE.md).
-const messageFrom = (error: unknown, fallback: string) =>
-  error instanceof ApiEnvelopeError
-    ? error.userMessage || error.message
-    : fallback;
 
 export const fetchTests = createAsyncThunk(
   'tests/fetchAll',
@@ -37,7 +42,7 @@ export const fetchTests = createAsyncThunk(
     filters:
       | { classExternalId?: string; month?: number; year?: number }
       | undefined,
-    { rejectWithValue }
+    { signal, rejectWithValue }
   ) => {
     try {
       const params = new URLSearchParams();
@@ -46,12 +51,13 @@ export const fetchTests = createAsyncThunk(
       if (filters?.month) params.set('month', String(filters.month));
       if (filters?.year) params.set('year', String(filters.year));
       const query = params.toString();
-      const response = await apiClient.get<any>(
+      const response = await apiClient.get<ApiResponse<'tests', ApiTest[]>>(
         query
           ? `${TEST_ROUTES.GET_ALL_TESTS}?${query}`
-          : TEST_ROUTES.GET_ALL_TESTS
+          : TEST_ROUTES.GET_ALL_TESTS,
+        { signal }
       );
-      return response?.[response?.keyName];
+      return response[response.keyName];
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to fetch tests'));
     }
@@ -62,12 +68,16 @@ export const addTest = createAsyncThunk(
   'tests/add',
   async (data: TestFormValues, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post<any>(TEST_ROUTES.CREATE_TEST, data);
+      const response = await apiClient.post<ApiResponse<'test', ApiTest>>(
+        TEST_ROUTES.CREATE_TEST,
+        data
+      );
       return {
-        test: response?.[response?.keyName] as ApiTest,
-        message: (response?.userMessage ||
-          response?.message ||
-          'Test created successfully') as string,
+        test: response[response.keyName],
+        message:
+          response.userMessage ||
+          response.message ||
+          'Test created successfully',
       };
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to create test'));
@@ -82,15 +92,16 @@ export const editTest = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await apiClient.put<any>(
+      const response = await apiClient.put<ApiResponse<'test', ApiTest>>(
         TEST_ROUTES.UPDATE_TEST(externalId),
         data
       );
       return {
-        test: response?.[response?.keyName] as ApiTest,
-        message: (response?.userMessage ||
-          response?.message ||
-          'Test updated successfully') as string,
+        test: response[response.keyName],
+        message:
+          response.userMessage ||
+          response.message ||
+          'Test updated successfully',
       };
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to update test'));
@@ -102,14 +113,15 @@ export const removeTest = createAsyncThunk(
   'tests/remove',
   async (externalId: string, { rejectWithValue }) => {
     try {
-      const response = await apiClient.delete<any>(
+      const response = await apiClient.delete<ApiMessage>(
         TEST_ROUTES.DELETE_TEST(externalId)
       );
       return {
         externalId,
-        message: (response?.userMessage ||
-          response?.message ||
-          'Test deleted successfully') as string,
+        message:
+          response.userMessage ||
+          response.message ||
+          'Test deleted successfully',
       };
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to delete test'));
@@ -119,12 +131,12 @@ export const removeTest = createAsyncThunk(
 
 export const fetchTestSubjects = createAsyncThunk(
   'tests/fetchSubjects',
-  async (externalId: string, { rejectWithValue }) => {
+  async (externalId: string, { signal, rejectWithValue }) => {
     try {
-      const response = await apiClient.get<any>(
-        TEST_ROUTES.GET_TEST_SUBJECTS(externalId)
-      );
-      return response?.[response?.keyName] as ApiTestSubject[];
+      const response = await apiClient.get<
+        ApiResponse<'testSubjects', ApiTestSubject[]>
+      >(TEST_ROUTES.GET_TEST_SUBJECTS(externalId), { signal });
+      return response[response.keyName];
     } catch (error) {
       return rejectWithValue(
         messageFrom(error, 'Failed to fetch test subjects')
@@ -146,15 +158,15 @@ export const updateTestSubjects = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await apiClient.put<any>(
-        TEST_ROUTES.SET_TEST_SUBJECTS(externalId),
-        { subjects }
-      );
+      const response = await apiClient.put<
+        ApiResponse<'testSubjects', ApiTestSubject[]>
+      >(TEST_ROUTES.SET_TEST_SUBJECTS(externalId), { subjects });
       return {
-        testSubjects: response?.[response?.keyName] as ApiTestSubject[],
-        message: (response?.userMessage ||
-          response?.message ||
-          'Test subjects updated successfully') as string,
+        testSubjects: response[response.keyName],
+        message:
+          response.userMessage ||
+          response.message ||
+          'Test subjects updated successfully',
       };
     } catch (error) {
       return rejectWithValue(
@@ -170,16 +182,20 @@ const testSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchTests.pending, (state) => {
+      .addCase(fetchTests.pending, (state, action) => {
         state.loading = true;
+        state.requestId = action.meta.requestId;
         state.error = null;
       })
       .addCase(fetchTests.fulfilled, (state, action) => {
+        if (state.requestId !== action.meta.requestId) return;
         state.loading = false;
         state.tests = action.payload;
       })
       .addCase(fetchTests.rejected, (state, action) => {
+        if (state.requestId !== action.meta.requestId) return;
         state.loading = false;
+        if (action.meta.aborted) return;
         state.error = (action.payload as string) || 'Failed to fetch tests';
       })
       .addCase(addTest.fulfilled, (state, action) => {
@@ -208,15 +224,19 @@ const testSlice = createSlice({
       .addCase(removeTest.rejected, (state, action) => {
         state.error = (action.payload as string) || 'Failed to delete test';
       })
-      .addCase(fetchTestSubjects.pending, (state) => {
+      .addCase(fetchTestSubjects.pending, (state, action) => {
         state.testSubjectsLoading = true;
+        state.testSubjectsRequestId = action.meta.requestId;
       })
       .addCase(fetchTestSubjects.fulfilled, (state, action) => {
+        if (state.testSubjectsRequestId !== action.meta.requestId) return;
         state.testSubjectsLoading = false;
         state.testSubjects = action.payload;
       })
       .addCase(fetchTestSubjects.rejected, (state, action) => {
+        if (state.testSubjectsRequestId !== action.meta.requestId) return;
         state.testSubjectsLoading = false;
+        if (action.meta.aborted) return;
         state.error =
           (action.payload as string) || 'Failed to fetch test subjects';
       })

@@ -1,5 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { apiClient, ApiEnvelopeError } from '../../services/apiClient';
+import {
+  apiClient,
+  messageFrom,
+  type ApiResponse,
+} from '../../services/apiClient';
 import { SCORE_ROUTES } from '../../services/apiRoutes';
 
 // Real `GET /student-score/entry` response shape (see edutracker-backend
@@ -46,6 +50,8 @@ export type SaveMarksEntryPayload = MarksEntryQuery & {
 interface ScoreState {
   marksEntry: MarksEntryData | null;
   loading: boolean;
+  // Latest fetch only: an aborted or superseded one must not touch the state
+  requestId: string | null;
   saving: boolean;
   error: string | null;
 }
@@ -53,25 +59,20 @@ interface ScoreState {
 const initialState: ScoreState = {
   marksEntry: null,
   loading: false,
+  requestId: null,
   saving: false,
   error: null,
 };
 
-// Surfaces the backend's wording rather than inventing our own (CLAUDE.md).
-const messageFrom = (error: unknown, fallback: string) =>
-  error instanceof ApiEnvelopeError
-    ? error.userMessage || error.message
-    : fallback;
-
 export const fetchMarksEntry = createAsyncThunk(
   'scores/fetchEntry',
-  async (params: MarksEntryQuery, { rejectWithValue }) => {
+  async (params: MarksEntryQuery, { signal, rejectWithValue }) => {
     try {
       const query = new URLSearchParams(params).toString();
-      const response = await apiClient.get<any>(
-        SCORE_ROUTES.GET_MARKS_ENTRY(query)
-      );
-      return response?.[response?.keyName] as MarksEntryData;
+      const response = await apiClient.get<
+        ApiResponse<'marksEntry', MarksEntryData>
+      >(SCORE_ROUTES.GET_MARKS_ENTRY(query), { signal });
+      return response[response.keyName];
     } catch (error) {
       return rejectWithValue(
         messageFrom(error, 'Failed to load students and marks')
@@ -84,16 +85,15 @@ export const saveMarksEntry = createAsyncThunk(
   'scores/save',
   async (payload: SaveMarksEntryPayload, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post<any>(
-        SCORE_ROUTES.ENTER_MARKS,
-        payload
-      );
+      const response = await apiClient.post<
+        ApiResponse<'studentScores', { skippedStudentsCount: number }>
+      >(SCORE_ROUTES.ENTER_MARKS, payload);
       return {
-        skippedStudentsCount: (response?.[response?.keyName]
-          ?.skippedStudentsCount ?? 0) as number,
-        message: (response?.userMessage ||
-          response?.message ||
-          'Marks saved successfully') as string,
+        skippedStudentsCount: response[response.keyName].skippedStudentsCount,
+        message:
+          response.userMessage ||
+          response.message ||
+          'Marks saved successfully',
       };
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to save marks'));
@@ -114,15 +114,18 @@ const scoreSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchMarksEntry.pending, (state) => {
+      .addCase(fetchMarksEntry.pending, (state, action) => {
         state.loading = true;
+        state.requestId = action.meta.requestId;
         state.error = null;
       })
       .addCase(fetchMarksEntry.fulfilled, (state, action) => {
+        if (state.requestId !== action.meta.requestId) return;
         state.loading = false;
         state.marksEntry = action.payload;
       })
       .addCase(fetchMarksEntry.rejected, (state, action) => {
+        if (state.requestId !== action.meta.requestId) return;
         state.loading = false;
         // An aborted request (superseded by a newer selection) isn't a real
         // failure — don't flash an error banner for it.
