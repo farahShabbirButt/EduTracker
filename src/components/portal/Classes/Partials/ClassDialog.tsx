@@ -5,59 +5,63 @@ import {
   DialogContent,
   DialogTitle,
   Stack,
-  TextField,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import type { Class, ClassFormValues } from '../@types/class.d';
+import FormTextField from '../../../../common/Form/FormTextField';
+import {
+  classFormSchema,
+  type ClassFormInput,
+  type ClassFormOutput,
+} from '../../../../validation/class.schema';
 
 interface Props {
   open: boolean;
   initial: Class | null;
   onClose: () => void;
-  onSave: (values: ClassFormValues) => void;
+  // Resolves once the save attempt finishes — the button stays disabled until then
+  onSave: (values: ClassFormValues) => Promise<void> | void;
 }
 
 export default function ClassDialog({ open, initial, onClose, onSave }: Props) {
-  const [name, setName] = useState('');
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { isSubmitting },
+  } = useForm<ClassFormInput, unknown, ClassFormOutput>({
+    resolver: zodResolver(classFormSchema),
+    defaultValues: { name: '' },
+  });
 
   useEffect(() => {
-    if (initial) {
-      setName(initial.name);
-    } else {
-      setName('');
-    }
-  }, [initial, open]);
-
-  const handleSave = () => {
-    if (name.trim()) {
-      onSave({ name: name.trim() });
-    }
-  };
+    if (open) reset({ name: initial?.name ?? '' });
+  }, [initial, open, reset]);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>{initial ? 'Edit Class' : 'Add New Class'}</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          <TextField
-            autoFocus
-            label="Class Name"
-            fullWidth
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button
-          variant="contained"
-          onClick={handleSave}
-          disabled={!name.trim()}
-        >
-          {initial ? 'Save Changes' : 'Create'}
-        </Button>
-      </DialogActions>
+      <form noValidate onSubmit={handleSubmit((values) => onSave(values))}>
+        <DialogTitle>{initial ? 'Edit Class' : 'Add New Class'}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <FormTextField
+              name="name"
+              control={control}
+              autoFocus
+              label="Class Name"
+              fullWidth
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button type="submit" variant="contained" disabled={isSubmitting}>
+            {initial ? 'Save Changes' : 'Create'}
+          </Button>
+        </DialogActions>
+      </form>
     </Dialog>
   );
 }
