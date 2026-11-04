@@ -1,5 +1,11 @@
-import { configureStore, combineReducers } from '@reduxjs/toolkit';
+import {
+  configureStore,
+  combineReducers,
+  isRejected,
+  type Middleware,
+} from '@reduxjs/toolkit';
 import { compose } from 'redux';
+import { toast } from 'react-toastify';
 
 declare global {
   interface Window {
@@ -8,11 +14,11 @@ declare global {
 }
 
 import authReducer from './slices/authSlice';
-import studentReducer from './slices/studentSlice';
-import classReducer from './slices/classSlice';
-import subjectReducer from './slices/subjectSlice';
-import gradeReducer from './slices/gradeSlice';
-import testReducer from './slices/testSlice';
+import studentReducer, { fetchStudents } from './slices/studentSlice';
+import classReducer, { fetchClasses } from './slices/classSlice';
+import subjectReducer, { fetchSubjects } from './slices/subjectSlice';
+import gradeReducer, { fetchGradeScales } from './slices/gradeSlice';
+import testReducer, { fetchTestSubjects, fetchTests } from './slices/testSlice';
 import scoreReducer from './slices/scoreSlice';
 import conductReducer from './slices/conductSlice';
 import reportReducer from './slices/reportSlice';
@@ -30,8 +36,29 @@ const rootReducer = combineReducers({
   report: reportReducer,
 });
 
+// A failed list load would otherwise look like an empty list. Marks entry,
+// conduct and the report show their own error instead.
+const isFailedListLoad = isRejected(
+  fetchStudents,
+  fetchClasses,
+  fetchSubjects,
+  fetchGradeScales,
+  fetchTests,
+  fetchTestSubjects
+);
+
+const listLoadErrors: Middleware = () => (next) => (action) => {
+  if (isFailedListLoad(action) && !action.meta.aborted) {
+    const message = (action.payload as string) || 'Failed to load data';
+    toast.error(message, { toastId: message });
+  }
+  return next(action);
+};
+
 const store = configureStore({
   reducer: rootReducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(listLoadErrors),
   devTools: process.env.NODE_ENV !== 'production',
 });
 

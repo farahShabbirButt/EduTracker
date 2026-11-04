@@ -62,7 +62,8 @@ export default function AssignToClassesDialog({
         s.classes?.some((c) => c.externalId === classId)
       )
     );
-  }, [classId, allSubjects]);
+    // `open`: reopening drops edits abandoned with Close
+  }, [classId, allSubjects, open]);
 
   const handleSave = async () => {
     if (!classId || selected.length === 0) return;

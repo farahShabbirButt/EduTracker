@@ -3,6 +3,8 @@
 
 @media print {
   body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; }
+  /* The dark theme's page colours are copied into the print frame too */
+  html, body { background: #fff !important; color: #000 !important; }
   .no-print { display: none !important; }
   .page { page-break-after: always; break-after: page; }
 }

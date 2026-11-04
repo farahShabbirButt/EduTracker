@@ -4,8 +4,8 @@ export interface Student {
   lastName: string;
   fatherName: string;
   rollNumber: string;
-  email?: string;
-  contactNo?: string;
+  email: string | null;
+  contactNo: string | null;
   class?: {
     name: string;
     externalId: string;
@@ -16,8 +16,6 @@ export interface Student {
     subjectType: string;
     maxMarks: number;
   }[];
-  isActive: boolean;
-  createdAt: string;
 }
 
 export type StudentFormValues = {

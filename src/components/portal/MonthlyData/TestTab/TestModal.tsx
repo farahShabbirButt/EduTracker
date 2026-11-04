@@ -22,7 +22,6 @@ import {
   addTest,
   editTest,
   fetchTestSubjects,
-  updateTestSubjects,
 } from '../../../../redux/slices/testSlice';
 import { fetchClasses } from '../../../../redux/slices/classSlice';
 import { fetchSubjects } from '../../../../redux/slices/subjectSlice';
@@ -53,11 +52,12 @@ export default function TestModal({
   const dispatch = useDispatch<AppDispatch>();
   const editing = Boolean(editTestId);
 
-  const { tests, testSubjects, testSubjectsLoading } = useSelector(
-    (state: RootState) => state.tests
-  );
+  const { tests, testSubjects, testSubjectsLoading, testSubjectsError } =
+    useSelector((state: RootState) => state.tests);
   const { classes } = useSelector((state: RootState) => state.classes);
-  const { subjects } = useSelector((state: RootState) => state.subjects);
+  const { subjects, loading: subjectsLoading } = useSelector(
+    (state: RootState) => state.subjects
+  );
 
   const existingTest = editing
     ? tests.find((t) => t.externalId === editTestId)
@@ -78,8 +78,11 @@ export default function TestModal({
   const subjectRows = useWatch({ control, name: 'subjects' });
 
   useEffect(() => {
-    dispatch(fetchClasses());
-    dispatch(fetchSubjects());
+    // Only when empty: a refresh while the form is open would rebuild the
+    // subject rows below and undo what's been ticked or typed.
+    if (classes.length === 0) dispatch(fetchClasses());
+    if (subjects.length === 0) dispatch(fetchSubjects());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch]);
 
   useEffect(() => {
@@ -119,19 +122,36 @@ export default function TestModal({
         : []
     );
 
-    setValue(
-      'subjects',
-      classSubjects.map((s) => {
-        const savedMaxMarks = savedByExternalId.get(s.externalId);
-        return {
-          subjectExternalId: s.externalId,
-          name: s.name,
-          included:
-            editing && existingTest ? savedMaxMarks !== undefined : true,
-          maxMarks: savedMaxMarks ?? s.maxMarks,
-        };
-      })
-    );
+    const classRows = classSubjects.map((s) => {
+      const savedMaxMarks = savedByExternalId.get(s.externalId);
+      return {
+        subjectExternalId: s.externalId,
+        name: s.name,
+        included: editing && existingTest ? savedMaxMarks !== undefined : true,
+        maxMarks: savedMaxMarks ?? s.maxMarks,
+      };
+    });
+
+    // A saved subject no longer assigned to the class still belongs to this
+    // test: without a row here, saving would remove it.
+    const orphanRows =
+      subjects.length > 0 && existingTest?.class.externalId === classExternalId
+        ? testSubjects
+            .filter(
+              (ts) =>
+                !classSubjects.some(
+                  (s) => s.externalId === ts.subject.externalId
+                )
+            )
+            .map((ts) => ({
+              subjectExternalId: ts.subject.externalId,
+              name: ts.subject.name,
+              included: true,
+              maxMarks: ts.maxMarks,
+            }))
+        : [];
+
+    setValue('subjects', [...classRows, ...orphanRows]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classExternalId, subjects, testSubjects]);
 
@@ -166,31 +186,32 @@ export default function TestModal({
     };
 
     if (editing && existingTest) {
-      const baseResult = await dispatch(
-        editTest({ externalId: existingTest.externalId, data: base })
+      // Sent only when changed, so a rename can't be refused over subjects the
+      // admin didn't touch.
+      const savedSubjects = new Map(
+        testSubjects.map((ts) => [ts.subject.externalId, ts.maxMarks])
       );
-      if (!editTest.fulfilled.match(baseResult)) {
-        toast.error((baseResult.payload as string) || 'Failed to update test');
-        return;
-      }
+      const subjectsUnchanged =
+        form.classExternalId === existingTest.class.externalId &&
+        subjectsPayload.length === savedSubjects.size &&
+        subjectsPayload.every(
+          (s) => savedSubjects.get(s.subjectExternalId) === s.maxMarks
+        );
 
-      const subjectsResult = await dispatch(
-        updateTestSubjects({
+      const result = await dispatch(
+        editTest({
           externalId: existingTest.externalId,
-          subjects: subjectsPayload,
+          data: subjectsUnchanged
+            ? base
+            : { ...base, subjects: subjectsPayload },
         })
       );
-      if (!updateTestSubjects.fulfilled.match(subjectsResult)) {
-        // e.g. 409 TEST_SUBJECT_HAS_SCORES — surface the backend's wording,
-        // don't swallow it into a generic message.
-        toast.error(
-          (subjectsResult.payload as string) || 'Failed to update test subjects'
-        );
-        return;
+      if (editTest.fulfilled.match(result)) {
+        toast.success(result.payload.message);
+        onClose();
+      } else {
+        toast.error((result.payload as string) || 'Failed to update test');
       }
-
-      toast.success(subjectsResult.payload.message);
-      onClose();
       return;
     }
 
@@ -285,52 +306,65 @@ export default function TestModal({
             Subjects
           </Typography>
 
-          {editing && testSubjectsLoading && <CircularProgress size={20} />}
+          {(subjectsLoading || (editing && testSubjectsLoading)) && (
+            <CircularProgress size={20} />
+          )}
 
-          {!testSubjectsLoading && subjectRows.length === 0 && (
-            <Typography variant="body2" color="text.secondary">
-              This class has no subjects assigned.
+          {editing && testSubjectsError && (
+            <Typography variant="body2" color="error" sx={{ mb: 1 }}>
+              {testSubjectsError}
             </Typography>
           )}
 
-          {!testSubjectsLoading && subjectRows.length > 0 && (
-            <Stack spacing={1}>
-              {subjectRows.map((row, i) => (
-                <Stack
-                  key={row.subjectExternalId}
-                  direction="row"
-                  spacing={2}
-                  alignItems="center"
-                >
-                  <Controller
-                    name={`subjects.${i}.included`}
-                    control={control}
-                    render={({ field }) => (
-                      <FormControlLabel
-                        sx={{ minWidth: 200 }}
-                        control={
-                          <Checkbox
-                            checked={!!field.value}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                          />
-                        }
-                        label={row.name}
-                      />
-                    )}
-                  />
-                  <FormTextField
-                    name={`subjects.${i}.maxMarks`}
-                    control={control}
-                    type="number"
-                    label="Max Marks"
-                    size="small"
-                    disabled={!row.included}
-                    inputProps={{ min: 1 }}
-                  />
-                </Stack>
-              ))}
-            </Stack>
-          )}
+          {!testSubjectsLoading &&
+            !subjectsLoading &&
+            !testSubjectsError &&
+            subjectRows.length === 0 && (
+              <Typography variant="body2" color="text.secondary">
+                This class has no subjects assigned.
+              </Typography>
+            )}
+
+          {!testSubjectsLoading &&
+            !subjectsLoading &&
+            subjectRows.length > 0 && (
+              <Stack spacing={1}>
+                {subjectRows.map((row, i) => (
+                  <Stack
+                    key={row.subjectExternalId}
+                    direction="row"
+                    spacing={2}
+                    alignItems="center"
+                  >
+                    <Controller
+                      name={`subjects.${i}.included`}
+                      control={control}
+                      render={({ field }) => (
+                        <FormControlLabel
+                          sx={{ minWidth: 200 }}
+                          control={
+                            <Checkbox
+                              checked={!!field.value}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                            />
+                          }
+                          label={row.name}
+                        />
+                      )}
+                    />
+                    <FormTextField
+                      name={`subjects.${i}.maxMarks`}
+                      control={control}
+                      type="number"
+                      label="Max Marks"
+                      size="small"
+                      disabled={!row.included}
+                      inputProps={{ min: 1 }}
+                    />
+                  </Stack>
+                ))}
+              </Stack>
+            )}
 
           {subjectsError && (
             <Typography variant="body2" color="error" sx={{ mt: 1 }}>
@@ -349,7 +383,11 @@ export default function TestModal({
         variant="contained"
         fullWidth
         sx={{ mt: 1 }}
-        disabled={isSubmitting}
+        disabled={
+          isSubmitting ||
+          subjectsLoading ||
+          (editing && (testSubjectsLoading || !!testSubjectsError))
+        }
       >
         {editing ? 'Update Test' : 'Create Test'}
       </Button>

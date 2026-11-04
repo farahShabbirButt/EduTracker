@@ -117,6 +117,7 @@ const conductSlice = createSlice({
       })
       .addCase(saveConduct.pending, (state) => {
         state.saving = true;
+        state.error = null;
       })
       .addCase(saveConduct.fulfilled, (state, action) => {
         state.saving = false;
