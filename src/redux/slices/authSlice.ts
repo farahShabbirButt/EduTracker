@@ -1,5 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { apiClient, ApiEnvelopeError } from '../../services/apiClient';
+import {
+  apiClient,
+  messageFrom,
+  type ApiMessage,
+  type ApiResponse,
+} from '../../services/apiClient';
 import { AUTH_ROUTES } from '../../services/apiRoutes';
 import type {
   IAuthUser,
@@ -25,18 +30,14 @@ const initialState: AuthState = {
   error: null,
 };
 
-// Surfaces the backend's wording rather than inventing our own.
-const messageFrom = (error: unknown, fallback: string) =>
-  error instanceof ApiEnvelopeError
-    ? error.userMessage || error.message
-    : fallback;
-
 export const login = createAsyncThunk(
   'auth/login',
   async (payload: ILoginPayload, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post<any>(AUTH_ROUTES.LOGIN, payload);
-      return response?.[response?.keyName]?.user as IAuthUser;
+      const response = await apiClient.post<
+        ApiResponse<'auth', { user: IAuthUser }>
+      >(AUTH_ROUTES.LOGIN, payload);
+      return response[response.keyName].user;
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to log in'));
     }
@@ -47,8 +48,10 @@ export const fetchMe = createAsyncThunk(
   'auth/fetchMe',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await apiClient.get<any>(AUTH_ROUTES.ME);
-      return response?.[response?.keyName] as IAuthUser;
+      const response = await apiClient.get<ApiResponse<'user', IAuthUser>>(
+        AUTH_ROUTES.ME
+      );
+      return response[response.keyName];
     } catch (error) {
       // A 401 here is the normal "not logged in" case, not an error worth showing.
       return rejectWithValue(messageFrom(error, 'Not authenticated'));
@@ -59,19 +62,23 @@ export const fetchMe = createAsyncThunk(
 export const logout = createAsyncThunk('auth/logout', async () => {
   // Deliberately not rethrowing: if the call fails the local session is cleared
   // anyway, so the user is never stuck appearing logged in.
-  await apiClient.post<any>(AUTH_ROUTES.LOGOUT, {}).catch(() => undefined);
+  await apiClient
+    .post<ApiMessage>(AUTH_ROUTES.LOGOUT, {})
+    .catch(() => undefined);
 });
 
 export const forgotPassword = createAsyncThunk(
   'auth/forgotPassword',
   async (email: string, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post<any>(AUTH_ROUTES.FORGOT_PASSWORD, {
-        email,
-      });
+      const response = await apiClient.post<ApiMessage>(
+        AUTH_ROUTES.FORGOT_PASSWORD,
+        {
+          email,
+        }
+      );
       return (
-        (response?.message as string) ||
-        'If an account exists, a reset link has been sent'
+        response.message || 'If an account exists, a reset link has been sent'
       );
     } catch (error) {
       return rejectWithValue(
@@ -85,11 +92,11 @@ export const resetPassword = createAsyncThunk(
   'auth/resetPassword',
   async (payload: IResetPasswordPayload, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post<any>(
+      const response = await apiClient.post<ApiMessage>(
         AUTH_ROUTES.RESET_PASSWORD,
         payload
       );
-      return (response?.message as string) || 'Password has been reset';
+      return response.message || 'Password has been reset';
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to reset password'));
     }

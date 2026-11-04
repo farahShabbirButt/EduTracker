@@ -58,9 +58,12 @@ export default function TestMarksEntry() {
     setSelectedSubjectExternalId('');
     dispatch(clearMarksEntry());
     setMarks({});
-    if (selectedClassExternalId) {
-      dispatch(fetchTests({ classExternalId: selectedClassExternalId }));
-    }
+    if (!selectedClassExternalId) return;
+
+    const request = dispatch(
+      fetchTests({ classExternalId: selectedClassExternalId })
+    );
+    return () => request.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClassExternalId]);
 
@@ -72,9 +75,10 @@ export default function TestMarksEntry() {
     setSelectedSubjectExternalId('');
     dispatch(clearMarksEntry());
     setMarks({});
-    if (selectedTestExternalId) {
-      dispatch(fetchTestSubjects(selectedTestExternalId));
-    }
+    if (!selectedTestExternalId) return;
+
+    const request = dispatch(fetchTestSubjects(selectedTestExternalId));
+    return () => request.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTestExternalId]);
 

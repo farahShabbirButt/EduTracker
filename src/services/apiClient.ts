@@ -22,6 +22,26 @@ export class ApiEnvelopeError extends Error {
   }
 }
 
+// Every success response carries these. For calls that only need the message.
+export type ApiMessage = {
+  keyName: string;
+  success?: boolean;
+  message?: string;
+  userMessage?: string;
+};
+
+// The backend puts the payload under the key named by keyName, so `K` must match
+// what the service sends, e.g. ApiResponse<'students', Student[]>.
+export type ApiResponse<K extends string, T> = ApiMessage & {
+  keyName: K;
+} & Record<K, T>;
+
+// Surfaces the backend's wording rather than inventing our own (CLAUDE.md).
+export const messageFrom = (error: unknown, fallback: string) =>
+  error instanceof ApiEnvelopeError
+    ? error.userMessage || error.message
+    : fallback;
+
 class ApiClient {
   private baseUrl: string;
   private onUnauthorized: (() => void) | null = null;

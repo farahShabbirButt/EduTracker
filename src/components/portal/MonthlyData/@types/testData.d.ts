@@ -40,20 +40,15 @@ export type ApiTestClassRef = {
 };
 
 export type ApiTest = {
-  id: number;
   externalId: string;
   name: string;
   testType: TestType;
   month: number;
   year: number;
   totalMarks: number;
-  classId: number;
   isActive: boolean;
   createdAt: string;
-  updatedAt?: string;
-  deletedAt?: string | null;
-  createdBy?: string | null;
-  updatedBy?: string | null;
+  updatedAt: string;
   class: ApiTestClassRef;
 };
 

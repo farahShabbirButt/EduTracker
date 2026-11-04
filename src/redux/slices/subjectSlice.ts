@@ -1,5 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { apiClient, ApiEnvelopeError } from '../../services/apiClient';
+import {
+  apiClient,
+  messageFrom,
+  type ApiMessage,
+  type ApiResponse,
+} from '../../services/apiClient';
 import { SUBJECT_ROUTES, SUBJECT_CLASS_ROUTES } from '../../services/apiRoutes';
 import type {
   ApiSubject,
@@ -9,29 +14,26 @@ import type {
 interface SubjectState {
   subjects: ApiSubject[];
   loading: boolean;
+  // Latest fetch only: an aborted or superseded one must not touch the state
+  requestId: string | null;
   error: string | null;
 }
 
 const initialState: SubjectState = {
   subjects: [],
   loading: false,
+  requestId: null,
   error: null,
 };
 
-// Surfaces the backend's wording rather than inventing our own (CLAUDE.md).
-const messageFrom = (error: unknown, fallback: string) =>
-  error instanceof ApiEnvelopeError
-    ? error.userMessage || error.message
-    : fallback;
-
 export const fetchSubjects = createAsyncThunk(
   'subjects/fetchAll',
-  async (_, { rejectWithValue }) => {
+  async (_, { signal, rejectWithValue }) => {
     try {
-      const response = await apiClient.get<any>(
-        SUBJECT_ROUTES.GET_ALL_SUBJECTS
-      );
-      return response?.[response?.keyName];
+      const response = await apiClient.get<
+        ApiResponse<'subjects', ApiSubject[]>
+      >(SUBJECT_ROUTES.GET_ALL_SUBJECTS, { signal });
+      return response[response.keyName];
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to fetch subjects'));
     }
@@ -42,15 +44,16 @@ export const addSubject = createAsyncThunk(
   'subjects/add',
   async (subject: SubjectFormValues, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post<any>(
+      const response = await apiClient.post<ApiResponse<'subject', ApiSubject>>(
         SUBJECT_ROUTES.CREATE_SUBJECT,
         subject
       );
       return {
-        subject: response?.[response?.keyName] as ApiSubject,
-        message: (response?.userMessage ||
-          response?.message ||
-          'Subject added successfully') as string,
+        subject: response[response.keyName],
+        message:
+          response.userMessage ||
+          response.message ||
+          'Subject added successfully',
       };
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to add subject'));
@@ -68,15 +71,16 @@ export const editSubject = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await apiClient.put<any>(
+      const response = await apiClient.put<ApiResponse<'subject', ApiSubject>>(
         SUBJECT_ROUTES.UPDATE_SUBJECT(externalId),
         data
       );
       return {
-        subject: response?.[response?.keyName] as ApiSubject,
-        message: (response?.userMessage ||
-          response?.message ||
-          'Subject updated successfully') as string,
+        subject: response[response.keyName],
+        message:
+          response.userMessage ||
+          response.message ||
+          'Subject updated successfully',
       };
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to update subject'));
@@ -88,14 +92,15 @@ export const removeSubject = createAsyncThunk(
   'subjects/remove',
   async (externalId: string, { rejectWithValue }) => {
     try {
-      const response = await apiClient.delete<any>(
+      const response = await apiClient.delete<ApiMessage>(
         SUBJECT_ROUTES.DELETE_SUBJECT(externalId)
       );
       return {
         externalId,
-        message: (response?.userMessage ||
-          response?.message ||
-          'Subject deleted successfully') as string,
+        message:
+          response.userMessage ||
+          response.message ||
+          'Subject deleted successfully',
       };
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to delete subject'));
@@ -113,14 +118,16 @@ export const assignSubjectsToClass = createAsyncThunk(
     { dispatch, rejectWithValue }
   ) => {
     try {
-      const response = await apiClient.post<any>(
+      const response = await apiClient.post<ApiMessage>(
         SUBJECT_CLASS_ROUTES.ASSIGN,
         payload
       );
       await dispatch(fetchSubjects());
-      return (response?.userMessage ||
-        response?.message ||
-        'Subjects assigned successfully') as string;
+      return (
+        response.userMessage ||
+        response.message ||
+        'Subjects assigned successfully'
+      );
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to assign subjects'));
     }
@@ -133,16 +140,20 @@ const subjectSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchSubjects.pending, (state) => {
+      .addCase(fetchSubjects.pending, (state, action) => {
         state.loading = true;
+        state.requestId = action.meta.requestId;
         state.error = null;
       })
       .addCase(fetchSubjects.fulfilled, (state, action) => {
+        if (state.requestId !== action.meta.requestId) return;
         state.loading = false;
         state.subjects = action.payload;
       })
       .addCase(fetchSubjects.rejected, (state, action) => {
+        if (state.requestId !== action.meta.requestId) return;
         state.loading = false;
+        if (action.meta.aborted) return;
         state.error = (action.payload as string) || 'Failed to fetch subjects';
       })
       .addCase(addSubject.fulfilled, (state, action) => {

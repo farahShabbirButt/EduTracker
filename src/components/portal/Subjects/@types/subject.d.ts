@@ -20,7 +20,6 @@ export type SubjectClassRef = {
 };
 
 export type ApiSubject = {
-  id: number;
   externalId: string;
   name: string;
   isActive: boolean;
@@ -28,9 +27,6 @@ export type ApiSubject = {
   maxMarks: number;
   createdAt: string;
   updatedAt: string;
-  deletedAt: string | null;
-  createdBy: string | null;
-  updatedBy: string | null;
   classes?: SubjectClassRef[];
 };
 
@@ -42,7 +38,6 @@ export type SubjectFormValues = {
 
 // Real `/grade-scale` API shape (see edutracker-backend GradeService).
 export type ApiGradeScale = {
-  id: number;
   externalId: string;
   minPercentage: number;
   maxPercentage: number;
@@ -50,9 +45,6 @@ export type ApiGradeScale = {
   remarks: string;
   createdAt: string;
   updatedAt: string;
-  deletedAt: string | null;
-  createdBy: string | null;
-  updatedBy: string | null;
 };
 
 export type GradeScaleFormValues = {

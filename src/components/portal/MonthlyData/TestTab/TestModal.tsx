@@ -83,17 +83,17 @@ export default function TestModal({
   }, [dispatch]);
 
   useEffect(() => {
-    if (existingTest) {
-      reset({
-        name: existingTest.name,
-        month: existingTest.month,
-        year: existingTest.year,
-        classExternalId: existingTest.class.externalId,
-        testType: existingTest.testType,
-        subjects: [],
-      });
-      dispatch(fetchTestSubjects(existingTest.externalId));
-    }
+    if (!existingTest) return;
+
+    reset({
+      name: existingTest.name,
+      month: existingTest.month,
+      year: existingTest.year,
+      classExternalId: existingTest.class.externalId,
+      testType: existingTest.testType,
+      subjects: [],
+    });
+    dispatch(fetchTestSubjects(existingTest.externalId));
     // Only reload the saved subjects when the test being edited changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingTest?.externalId]);
