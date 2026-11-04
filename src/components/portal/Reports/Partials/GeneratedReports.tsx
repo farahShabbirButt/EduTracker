@@ -7,11 +7,7 @@ import {
   IconButton,
 } from '@mui/material';
 
-import {
-  Visibility as PreviewIcon,
-  Download as DownloadIcon,
-  LocalPrintshop as PrintIcon,
-} from '@mui/icons-material';
+import { Visibility as PreviewIcon } from '@mui/icons-material';
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../redux/store';
@@ -62,17 +58,6 @@ const GeneratedReports = ({ reportSettings }: IGeneratedReportsProps) => {
                     }}
                   >
                     <PreviewIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Download">
-                  <IconButton color="default">
-                    <DownloadIcon />
-                  </IconButton>
-                </Tooltip>
-
-                <Tooltip title="Print">
-                  <IconButton color="default">
-                    <PrintIcon />
                   </IconButton>
                 </Tooltip>
               </Box>

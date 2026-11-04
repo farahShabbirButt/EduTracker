@@ -34,11 +34,15 @@ const ReportPreviewModal = ({
     (state: RootState) => state.report
   );
   const printRef = useRef<HTMLDivElement | null>(null);
+  const hasTests = !!report && report.rows.length > 0;
 
   // Same working react-to-print pattern used by ResultCardPreview.
   const handlePrint = useReactToPrint({
     contentRef: printRef,
-    documentTitle: 'Result Card',
+    // Becomes the PDF's file name, so saved cards don't overwrite each other
+    documentTitle: report
+      ? `Result Card ${report.student.rollNumber} ${report.student.name}`
+      : 'Result Card',
   });
 
   // Loads the real card whenever the modal opens for a given student/year.
@@ -88,7 +92,7 @@ const ReportPreviewModal = ({
             variant="contained"
             startIcon={<PrintIcon />}
             onClick={handlePrint}
-            disabled={!report}
+            disabled={!hasTests}
           >
             Print Result Card
           </Button>
@@ -105,7 +109,13 @@ const ReportPreviewModal = ({
 
         {!loading && error && <Alert severity="error">{error}</Alert>}
 
-        {!loading && !error && report && (
+        {!loading && !error && report && !hasTests && (
+          <Alert severity="info">
+            No tests found for {year}, so there is no result card to print.
+          </Alert>
+        )}
+
+        {!loading && !error && hasTests && (
           <div className="page">
             <ResultCard ref={printRef} data={report} />
           </div>

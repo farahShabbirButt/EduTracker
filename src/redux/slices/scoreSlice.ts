@@ -38,9 +38,10 @@ export type MarksEntryQuery = {
   subjectExternalId: string;
 };
 
+// null clears a saved mark
 export type ScoreItem = {
   studentExternalId: string;
-  marksObtained: number;
+  marksObtained: number | null;
 };
 
 export type SaveMarksEntryPayload = MarksEntryQuery & {
@@ -136,6 +137,7 @@ const scoreSlice = createSlice({
       })
       .addCase(saveMarksEntry.pending, (state) => {
         state.saving = true;
+        state.error = null;
       })
       .addCase(saveMarksEntry.fulfilled, (state) => {
         state.saving = false;

@@ -70,8 +70,11 @@ export default function ConductEntry() {
   // recorded. Aborts a still-in-flight request if the selection changes again
   // before it resolves, so a stale response can't land after a newer one.
   useEffect(() => {
+    // Cleared on every change, so one student's ratings are never on screen or
+    // saved under another student or month while the next one loads.
+    dispatch(clearConduct());
+
     if (!selectedStudentExternalId || !month || !year) {
-      dispatch(clearConduct());
       return;
     }
 
@@ -94,13 +97,15 @@ export default function ConductEntry() {
   useEffect(() => {
     setBehaviour(conduct?.behaviour ?? '');
     setUniformCleanliness(conduct?.uniformCleanliness ?? '');
-  }, [conduct]);
+    // The selection deps reset unsaved picks when `conduct` stays null
+  }, [conduct, selectedStudentExternalId, month, year]);
 
   // Both ratings are required together by the PUT body — rather than guess
   // whether the backend accepts a partial update, the Save button just stays
   // off until both are picked. Leaving both blank (a student not yet rated)
   // is still a fully valid, non-erroring state.
   const canSave =
+    !conductLoading &&
     !!selectedStudentExternalId &&
     !!month &&
     !!year &&
@@ -148,6 +153,7 @@ export default function ConductEntry() {
         label="Select Class"
         value={selectedClassExternalId}
         onChange={(e) => setSelectedClassExternalId(e.target.value)}
+        disabled={saving}
         sx={{ mb: 2 }}
       >
         {classes.map((c) => (
@@ -165,7 +171,7 @@ export default function ConductEntry() {
         value={selectedStudentExternalId}
         onChange={(e) => setSelectedStudentExternalId(e.target.value)}
         sx={{ mb: 2 }}
-        disabled={!selectedClassExternalId}
+        disabled={!selectedClassExternalId || saving}
       >
         {classStudents.map((s) => (
           <MenuItem key={s.externalId} value={s.externalId}>
@@ -179,6 +185,7 @@ export default function ConductEntry() {
         <TextField
           select
           label="Month"
+          disabled={saving}
           value={month}
           onChange={(e) => setMonth(e.target.value)}
           sx={{ flex: 1 }}
@@ -192,6 +199,7 @@ export default function ConductEntry() {
         <TextField
           type="number"
           label="Year"
+          disabled={saving}
           value={year}
           onChange={(e) => setYear(Number(e.target.value))}
           inputProps={{ min: 2000, max: 2100 }}

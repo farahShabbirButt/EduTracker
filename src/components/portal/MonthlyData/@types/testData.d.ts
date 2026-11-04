@@ -78,5 +78,5 @@ export type TestFormValues = {
   subjects: TestSubjectInput[];
 };
 
-// PUT /test/:externalId body — same fields, all optional, NO subjects key.
-export type TestUpdateValues = Partial<Omit<TestFormValues, 'subjects'>>;
+// PUT /test/:externalId body — same fields, all optional, saved in one transaction.
+export type TestUpdateValues = Partial<TestFormValues>;

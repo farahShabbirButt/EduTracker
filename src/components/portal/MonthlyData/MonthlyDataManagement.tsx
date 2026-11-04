@@ -80,9 +80,11 @@ export default function MonthlyDataManagement() {
       <Modal open={openCreateModal} onClose={() => setOpenCreateModal(false)}>
         <Box
           sx={{
-            width: 500,
+            width: { xs: 'calc(100% - 32px)', sm: 500 },
             mx: 'auto',
-            mt: 10,
+            mt: { xs: 2, sm: 5 },
+            maxHeight: { xs: 'calc(100vh - 32px)', sm: 'calc(100vh - 80px)' },
+            overflow: 'auto',
             backgroundColor: 'background.paper',
             borderRadius: 2,
             p: 3,

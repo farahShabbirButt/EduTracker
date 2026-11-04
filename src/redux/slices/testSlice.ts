@@ -10,7 +10,6 @@ import type {
   ApiTest,
   ApiTestSubject,
   TestFormValues,
-  TestSubjectInput,
   TestUpdateValues,
 } from '../../components/portal/MonthlyData/@types/testData.d';
 
@@ -22,6 +21,7 @@ interface TestState {
   error: string | null;
   testSubjects: ApiTestSubject[];
   testSubjectsLoading: boolean;
+  testSubjectsError: string | null;
   // Latest fetch only: an aborted or superseded one must not touch the state
   testSubjectsRequestId: string | null;
 }
@@ -33,6 +33,7 @@ const initialState: TestState = {
   error: null,
   testSubjects: [],
   testSubjectsLoading: false,
+  testSubjectsError: null,
   testSubjectsRequestId: null,
 };
 
@@ -145,37 +146,6 @@ export const fetchTestSubjects = createAsyncThunk(
   }
 );
 
-// PUT /test/:externalId/subjects refuses to drop a subject that already has
-// scores entered (409 TEST_SUBJECT_HAS_SCORES) — that message must reach the
-// user, not be swallowed as a generic failure.
-export const updateTestSubjects = createAsyncThunk(
-  'tests/updateSubjects',
-  async (
-    {
-      externalId,
-      subjects,
-    }: { externalId: string; subjects: TestSubjectInput[] },
-    { rejectWithValue }
-  ) => {
-    try {
-      const response = await apiClient.put<
-        ApiResponse<'testSubjects', ApiTestSubject[]>
-      >(TEST_ROUTES.SET_TEST_SUBJECTS(externalId), { subjects });
-      return {
-        testSubjects: response[response.keyName],
-        message:
-          response.userMessage ||
-          response.message ||
-          'Test subjects updated successfully',
-      };
-    } catch (error) {
-      return rejectWithValue(
-        messageFrom(error, 'Failed to update test subjects')
-      );
-    }
-  }
-);
-
 const testSlice = createSlice({
   name: 'tests',
   initialState,
@@ -227,6 +197,9 @@ const testSlice = createSlice({
       .addCase(fetchTestSubjects.pending, (state, action) => {
         state.testSubjectsLoading = true;
         state.testSubjectsRequestId = action.meta.requestId;
+        state.testSubjectsError = null;
+        // Never leave one test's subjects on screen for the next test
+        state.testSubjects = [];
       })
       .addCase(fetchTestSubjects.fulfilled, (state, action) => {
         if (state.testSubjectsRequestId !== action.meta.requestId) return;
@@ -237,30 +210,8 @@ const testSlice = createSlice({
         if (state.testSubjectsRequestId !== action.meta.requestId) return;
         state.testSubjectsLoading = false;
         if (action.meta.aborted) return;
-        state.error =
+        state.testSubjectsError =
           (action.payload as string) || 'Failed to fetch test subjects';
-      })
-      .addCase(updateTestSubjects.fulfilled, (state, action) => {
-        state.testSubjects = action.payload.testSubjects;
-        // The subjects change also recomputes the parent test's totalMarks —
-        // reflect that in the already-loaded test so the list/table stay accurate
-        // without a full refetch.
-        const total = action.payload.testSubjects.reduce(
-          (sum, ts) => sum + (Number(ts.maxMarks) || 0),
-          0
-        );
-        const index = state.tests.findIndex(
-          (t) =>
-            t.externalId ===
-            (action.meta.arg as { externalId: string }).externalId
-        );
-        if (index !== -1) {
-          state.tests[index] = { ...state.tests[index], totalMarks: total };
-        }
-      })
-      .addCase(updateTestSubjects.rejected, (state, action) => {
-        state.error =
-          (action.payload as string) || 'Failed to update test subjects';
       });
   },
 });

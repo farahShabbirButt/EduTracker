@@ -1,6 +1,6 @@
 // TestMarksEntry.tsx
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -25,6 +25,7 @@ import {
   fetchMarksEntry,
   saveMarksEntry,
   clearMarksEntry,
+  type ScoreItem,
 } from '../../../redux/slices/scoreSlice';
 import { MonthList } from '../../../config/constants';
 
@@ -46,7 +47,18 @@ export default function TestMarksEntry() {
   const [selectedSubjectExternalId, setSelectedSubjectExternalId] =
     useState('');
 
+  // NaN marks text the number input can't read, such as a half-typed `4e`
   const [marks, setMarks] = useState<Record<string, number | ''>>({});
+
+  // Bumped on every selection change and on leaving the screen, so a save that
+  // finishes afterwards doesn't reload the old selection over the new one.
+  const selectionVersion = useRef(0);
+  useEffect(
+    () => () => {
+      selectionVersion.current += 1;
+    },
+    [selectedClassExternalId, selectedTestExternalId, selectedSubjectExternalId]
+  );
 
   useEffect(() => {
     dispatch(fetchClasses());
@@ -58,12 +70,9 @@ export default function TestMarksEntry() {
     setSelectedSubjectExternalId('');
     dispatch(clearMarksEntry());
     setMarks({});
-    if (!selectedClassExternalId) return;
-
-    const request = dispatch(
-      fetchTests({ classExternalId: selectedClassExternalId })
-    );
-    return () => request.abort();
+    if (selectedClassExternalId) {
+      dispatch(fetchTests({ classExternalId: selectedClassExternalId }));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClassExternalId]);
 
@@ -87,13 +96,16 @@ export default function TestMarksEntry() {
   // changes again before it resolves, so a stale response can't land after a
   // newer one.
   useEffect(() => {
+    // Cleared on every change, so one subject's marks are never on screen or
+    // saved under another subject while the next one loads.
+    dispatch(clearMarksEntry());
+    setMarks({});
+
     if (
       !selectedClassExternalId ||
       !selectedTestExternalId ||
       !selectedSubjectExternalId
     ) {
-      dispatch(clearMarksEntry());
-      setMarks({});
       return;
     }
 
@@ -134,18 +146,24 @@ export default function TestMarksEntry() {
   const monthLabel = (month: number) =>
     MonthList.find((m) => m.value === month)?.label ?? month;
 
-  const handleMarkChange = (studentExternalId: string, rawValue: string) => {
-    if (rawValue === '') {
-      setMarks((prev) => ({ ...prev, [studentExternalId]: '' }));
-      return;
-    }
-    const value = Number(rawValue);
-    if (Number.isNaN(value)) return;
+  // Listens to `input`, not `change`: a number input reports unreadable text as
+  // '', the same as an empty cell, so React sends no change between the two.
+  // Only a really empty cell may clear a saved mark.
+  const handleMarkInput = (
+    studentExternalId: string,
+    input: HTMLInputElement | HTMLTextAreaElement
+  ) => {
+    const value = input.validity.badInput
+      ? NaN
+      : input.value === ''
+        ? ''
+        : Number(input.value);
     setMarks((prev) => ({ ...prev, [studentExternalId]: value }));
   };
 
   const markError = (value: number | '') => {
     if (value === '') return null;
+    if (Number.isNaN(value)) return 'Enter a number';
     if (value < 0) return 'Cannot be negative';
     if (value > maxMarks) return `Cannot exceed ${maxMarks}`;
     return null;
@@ -165,31 +183,36 @@ export default function TestMarksEntry() {
       return;
     }
 
-    const scores = marksEntry.students
-      .filter(
-        (s) => marks[s.externalId] !== '' && marks[s.externalId] !== undefined
-      )
-      .map((s) => ({
-        studentExternalId: s.externalId,
-        marksObtained: Number(marks[s.externalId]),
-      }));
+    // A blank cell clears a saved mark; one that was never filled is left out
+    const scores = marksEntry.students.flatMap((s): ScoreItem[] => {
+      const value = marks[s.externalId];
+      if (value !== '' && value !== undefined) {
+        return [{ studentExternalId: s.externalId, marksObtained: value }];
+      }
+      return s.marksObtained === null
+        ? []
+        : [{ studentExternalId: s.externalId, marksObtained: null }];
+    });
 
     if (scores.length === 0) {
       toast.error('Enter at least one mark before saving.');
       return;
     }
 
-    const result = await dispatch(
-      saveMarksEntry({
-        classExternalId: selectedClassExternalId,
-        testExternalId: selectedTestExternalId,
-        subjectExternalId: selectedSubjectExternalId,
-        scores,
-      })
-    );
+    const selection = {
+      classExternalId: selectedClassExternalId,
+      testExternalId: selectedTestExternalId,
+      subjectExternalId: selectedSubjectExternalId,
+    };
+    const versionAtSave = selectionVersion.current;
+    const result = await dispatch(saveMarksEntry({ ...selection, scores }));
 
     if (saveMarksEntry.fulfilled.match(result)) {
       toast.success(result.payload.message);
+      // Reload so the next save compares against what is really stored
+      if (selectionVersion.current === versionAtSave) {
+        dispatch(fetchMarksEntry(selection));
+      }
 
       // A student skipped here didn't belong to the class — surfacing the
       // count is the difference between a typo being visible and it being
@@ -227,6 +250,7 @@ export default function TestMarksEntry() {
         label="Select Class"
         value={selectedClassExternalId}
         onChange={(e) => setSelectedClassExternalId(e.target.value)}
+        disabled={saving}
         sx={{ mb: 2 }}
       >
         {classes.map((c) => (
@@ -244,7 +268,7 @@ export default function TestMarksEntry() {
         value={selectedTestExternalId}
         onChange={(e) => setSelectedTestExternalId(e.target.value)}
         sx={{ mb: 2 }}
-        disabled={!selectedClassExternalId}
+        disabled={!selectedClassExternalId || saving}
       >
         {tests.map((t) => (
           <MenuItem key={t.externalId} value={t.externalId}>
@@ -260,7 +284,7 @@ export default function TestMarksEntry() {
         label="Select Subject"
         sx={{ mb: 2 }}
         value={selectedSubjectExternalId}
-        disabled={!selectedTestExternalId || testSubjectsLoading}
+        disabled={!selectedTestExternalId || testSubjectsLoading || saving}
         onChange={(e) => setSelectedSubjectExternalId(e.target.value)}
       >
         {testSubjects.map((ts) => (
@@ -311,13 +335,16 @@ export default function TestMarksEntry() {
                       <TextField
                         type="number"
                         size="small"
-                        value={value}
-                        onChange={(e) =>
-                          handleMarkChange(st.externalId, e.target.value)
-                        }
+                        value={Number.isNaN(value) ? '' : value}
+                        disabled={saving}
                         error={!!error}
                         helperText={error}
-                        inputProps={{ min: 0, max: maxMarks }}
+                        inputProps={{
+                          min: 0,
+                          max: maxMarks,
+                          onInput: (e) =>
+                            handleMarkInput(st.externalId, e.currentTarget),
+                        }}
                         sx={{ width: 120 }}
                       />
                     </TableCell>
@@ -339,7 +366,7 @@ export default function TestMarksEntry() {
         </>
       )}
 
-      {marksEntry && marksEntry.students.length > 0 && (
+      {marksEntry && !entryLoading && marksEntry.students.length > 0 && (
         <Box sx={{ mt: 3 }}>
           <Button
             variant="contained"
