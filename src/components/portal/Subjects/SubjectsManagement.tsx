@@ -29,10 +29,11 @@ import SubjectDialog from './Partial/SubjectsDialog';
 import AssignToClasses from './Partial/AssignToClasses';
 import GradeBoundariesDialog from './Partial/GradeBoundries';
 import DeleteDialog from '../../../common/Dialogs/DeleteDialog/DeleteDialog';
+import LoadError from '../../../common/LoadError';
 
 export default function SubjectsManagement() {
   const dispatch = useDispatch<AppDispatch>();
-  const { subjects, loading } = useSelector(
+  const { subjects, loading, loadError } = useSelector(
     (state: RootState) => state.subjects
   );
   const { classes } = useSelector((state: RootState) => state.classes);
@@ -173,6 +174,13 @@ export default function SubjectsManagement() {
           </Stack>
         </CardContent>
       </Card>
+
+      {loadError && (
+        <LoadError
+          message={loadError}
+          onRetry={() => dispatch(fetchSubjects())}
+        />
+      )}
 
       <SubjectListing
         rows={filtered}

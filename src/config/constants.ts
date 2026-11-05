@@ -30,6 +30,8 @@ export const ResultSampleData: IReportCard = {
   rows: [
     {
       testExternalId: 'sample-test-1',
+      month: 1,
+      year: 2025,
       testName: 'Test 1',
       marks: {
         maths: { obtained: 30, max: 30 },
@@ -48,6 +50,8 @@ export const ResultSampleData: IReportCard = {
     },
     {
       testExternalId: 'sample-test-2',
+      month: 2,
+      year: 2025,
       testName: 'Test 2',
       marks: {
         maths: { obtained: 22, max: 30 },
@@ -66,6 +70,8 @@ export const ResultSampleData: IReportCard = {
     },
     {
       testExternalId: 'sample-test-3',
+      month: 3,
+      year: 2025,
       testName: 'Test 3',
       marks: {
         maths: { obtained: 23, max: 30 },
@@ -84,6 +90,8 @@ export const ResultSampleData: IReportCard = {
     },
     {
       testExternalId: 'sample-test-4',
+      month: 4,
+      year: 2025,
       testName: 'Test 4',
       marks: {
         maths: { obtained: 29, max: 30 },
@@ -102,6 +110,8 @@ export const ResultSampleData: IReportCard = {
     },
     {
       testExternalId: 'sample-test-5',
+      month: 5,
+      year: 2025,
       testName: 'Test 5',
       marks: {
         maths: { obtained: 28, max: 30 },
@@ -120,6 +130,8 @@ export const ResultSampleData: IReportCard = {
     },
     {
       testExternalId: 'sample-test-6',
+      month: 6,
+      year: 2025,
       testName: 'Test 6',
       marks: {
         maths: { obtained: 26, max: 30 },
@@ -138,6 +150,8 @@ export const ResultSampleData: IReportCard = {
     },
     {
       testExternalId: 'sample-test-7',
+      month: 7,
+      year: 2025,
       testName: 'Test 7',
       marks: {
         maths: { obtained: 27, max: 30 },
@@ -156,6 +170,8 @@ export const ResultSampleData: IReportCard = {
     },
     {
       testExternalId: 'sample-test-8',
+      month: 8,
+      year: 2025,
       testName: 'Test 8',
       // Al Quran and Islamiat were not examined in this test — their keys are
       // omitted entirely (not zeroed) so the card renders blank cells.

@@ -47,7 +47,7 @@ const emptyForm: GradeScaleFormValues = {
 
 export default function GradeBoundariesDialog({ open, onClose }: Props) {
   const dispatch = useDispatch<AppDispatch>();
-  const { gradeScales, loading } = useSelector(
+  const { gradeScales, loading, loadError } = useSelector(
     (state: RootState) => state.grades
   );
 
@@ -67,6 +67,26 @@ export default function GradeBoundariesDialog({ open, onClose }: Props) {
     () => [...gradeScales].sort((a, b) => b.minPercentage - a.minPercentage),
     [gradeScales]
   );
+
+  // Gaps can't stop a card, but a percentage in one takes the band below it
+  const gaps = React.useMemo(() => {
+    if (sorted.length === 0) return [];
+    const ascending = [...sorted].reverse();
+    const found: string[] = [];
+    if (ascending[0].minPercentage > 0) {
+      found.push(`0 to ${ascending[0].minPercentage}`);
+    }
+    ascending.slice(1).forEach((band, i) => {
+      const below = ascending[i];
+      if (band.minPercentage - below.maxPercentage > 0.01001) {
+        found.push(`${below.maxPercentage} to ${band.minPercentage}`);
+      }
+    });
+    if (sorted[0].maxPercentage < 100) {
+      found.push(`${sorted[0].maxPercentage} to 100`);
+    }
+    return found;
+  }, [sorted]);
 
   // Client-side check so a round trip isn't needed just to be told "overlaps" —
   // the backend enforces the same rules and is still the authority (its error
@@ -175,6 +195,20 @@ export default function GradeBoundariesDialog({ open, onClose }: Props) {
       <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
         <DialogTitle>Grade Boundaries</DialogTitle>
         <DialogContent>
+          {loadError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {loadError}
+            </Alert>
+          )}
+          {gaps.length > 0 && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              These percentages have no band: {gaps.join(', ')}. A student there
+              gets the band below.
+            </Alert>
+          )}
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            The lowest band prints FAIL on the card.
+          </Typography>
           <Table size="small">
             <TableHead>
               <TableRow>
@@ -227,7 +261,7 @@ export default function GradeBoundariesDialog({ open, onClose }: Props) {
                   </TableCell>
                 </TableRow>
               ))}
-              {!loading && sorted.length === 0 && (
+              {!loading && !loadError && sorted.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5}>
                     <Typography variant="body2" color="text.secondary">
@@ -248,6 +282,7 @@ export default function GradeBoundariesDialog({ open, onClose }: Props) {
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField
                   label="Grade"
+                  slotProps={{ htmlInput: { maxLength: 5 } }}
                   value={form.grade}
                   onChange={(e) =>
                     setForm((prev) => ({ ...prev, grade: e.target.value }))

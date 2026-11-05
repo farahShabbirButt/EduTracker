@@ -17,6 +17,8 @@ interface SubjectState {
   // Latest fetch only: an aborted or superseded one must not touch the state
   requestId: string | null;
   error: string | null;
+  // Only a failed list load, not a failed save
+  loadError: string | null;
 }
 
 const initialState: SubjectState = {
@@ -24,6 +26,7 @@ const initialState: SubjectState = {
   loading: false,
   requestId: null,
   error: null,
+  loadError: null,
 };
 
 export const fetchSubjects = createAsyncThunk(
@@ -122,7 +125,13 @@ export const assignSubjectsToClass = createAsyncThunk(
         SUBJECT_CLASS_ROUTES.ASSIGN,
         payload
       );
-      await dispatch(fetchSubjects());
+      const refreshed = await dispatch(fetchSubjects());
+      // The next Save would write the old list back
+      if (fetchSubjects.rejected.match(refreshed)) {
+        return rejectWithValue(
+          'Subjects saved, but the list could not refresh. Reload before assigning again'
+        );
+      }
       return (
         response.userMessage ||
         response.message ||
@@ -144,6 +153,7 @@ const subjectSlice = createSlice({
         state.loading = true;
         state.requestId = action.meta.requestId;
         state.error = null;
+        state.loadError = null;
       })
       .addCase(fetchSubjects.fulfilled, (state, action) => {
         if (state.requestId !== action.meta.requestId) return;
@@ -155,6 +165,7 @@ const subjectSlice = createSlice({
         state.loading = false;
         if (action.meta.aborted) return;
         state.error = (action.payload as string) || 'Failed to fetch subjects';
+        state.loadError = state.error;
       })
       .addCase(addSubject.fulfilled, (state, action) => {
         state.subjects.unshift(action.payload.subject);

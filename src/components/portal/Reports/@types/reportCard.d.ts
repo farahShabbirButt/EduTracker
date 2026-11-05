@@ -9,6 +9,8 @@ export interface IReportCardSubjectColumn {
 export interface IReportCardRow {
   testExternalId: string;
   testName: string;
+  month: number;
+  year: number;
   // No key: the student wasn't examined in that subject. obtained null: the
   // mark isn't entered yet. Both print blank, never a substituted 0.
   marks: Record<string, { obtained: number | null; max: number }>;

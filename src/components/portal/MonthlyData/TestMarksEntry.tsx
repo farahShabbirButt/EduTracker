@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
+import DeleteDialog from '../../../common/Dialogs/DeleteDialog/DeleteDialog';
 import type { AppDispatch, RootState } from '../../../redux/store';
 import { fetchClasses } from '../../../redux/slices/classSlice';
 import { fetchTests, fetchTestSubjects } from '../../../redux/slices/testSlice';
@@ -29,7 +30,12 @@ import {
 } from '../../../redux/slices/scoreSlice';
 import { MonthList } from '../../../config/constants';
 
-export default function TestMarksEntry() {
+export default function TestMarksEntry({
+  onDirtyChange,
+}: {
+  onDirtyChange?: (dirty: boolean) => void;
+}) {
+  const [pendingChange, setPendingChange] = useState<(() => void) | null>(null);
   const dispatch = useDispatch<AppDispatch>();
   const { classes } = useSelector((state: RootState) => state.classes);
   const { tests, testSubjects, testSubjectsLoading } = useSelector(
@@ -170,6 +176,36 @@ export default function TestMarksEntry() {
     return null;
   };
 
+  // NaN counts: half-typed text is still unsaved work
+  const dirty = useMemo(
+    () =>
+      !saving &&
+      !entryLoading &&
+      !!marksEntry &&
+      marksEntry.students.some((s) => {
+        const value = marks[s.externalId];
+        return value !== undefined && !Object.is(value, s.marksObtained ?? '');
+      }),
+    [marks, marksEntry, saving, entryLoading]
+  );
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+
+  // Closing or reloading the tab
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
+
+  const confirmDiscard = (change: () => void) => {
+    if (dirty) setPendingChange(() => change);
+    else change();
+  };
+
   const hasInvalidMarks = useMemo(
     () => Object.values(marks).some((value) => markError(value) !== null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -244,13 +280,28 @@ export default function TestMarksEntry() {
         Test Marks Entry
       </Typography>
 
+      <DeleteDialog
+        open={!!pendingChange}
+        title="Discard unsaved marks?"
+        subtitle="The marks typed here haven't been saved."
+        confirmLabel="Discard"
+        onCancel={() => setPendingChange(null)}
+        onConfirm={() => {
+          pendingChange?.();
+          setPendingChange(null);
+        }}
+      />
+
       {/* Class SELECTION */}
       <TextField
         fullWidth
         select
         label="Select Class"
         value={selectedClassExternalId}
-        onChange={(e) => setSelectedClassExternalId(e.target.value)}
+        onChange={(e) => {
+          const { value } = e.target;
+          confirmDiscard(() => setSelectedClassExternalId(value));
+        }}
         disabled={saving}
         sx={{ mb: 2 }}
       >
@@ -267,7 +318,10 @@ export default function TestMarksEntry() {
         select
         label="Select Test"
         value={selectedTestExternalId}
-        onChange={(e) => setSelectedTestExternalId(e.target.value)}
+        onChange={(e) => {
+          const { value } = e.target;
+          confirmDiscard(() => setSelectedTestExternalId(value));
+        }}
         sx={{ mb: 2 }}
         disabled={!selectedClassExternalId || saving}
       >
@@ -286,7 +340,10 @@ export default function TestMarksEntry() {
         sx={{ mb: 2 }}
         value={selectedSubjectExternalId}
         disabled={!selectedTestExternalId || testSubjectsLoading || saving}
-        onChange={(e) => setSelectedSubjectExternalId(e.target.value)}
+        onChange={(e) => {
+          const { value } = e.target;
+          confirmDiscard(() => setSelectedSubjectExternalId(value));
+        }}
       >
         {testSubjects.map((ts) => (
           <MenuItem key={ts.subject.externalId} value={ts.subject.externalId}>

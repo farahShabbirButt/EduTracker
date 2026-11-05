@@ -1,6 +1,7 @@
 // src/components/subjects/AssignToGradesDialog.tsx
 import * as React from 'react';
 import {
+  Alert,
   Autocomplete,
   Button,
   Chip,
@@ -31,9 +32,11 @@ export default function AssignToClassesDialog({
   allSubjects,
 }: Props) {
   const dispatch = useDispatch<AppDispatch>();
-  const { classes, loading: classesLoading } = useSelector(
-    (state: RootState) => state.classes
-  );
+  const {
+    classes,
+    loading: classesLoading,
+    loadError: classesLoadError,
+  } = useSelector((state: RootState) => state.classes);
 
   const [classId, setClassId] = React.useState('');
   const [selected, setSelected] = React.useState<ApiSubject[]>([]);
@@ -64,6 +67,12 @@ export default function AssignToClassesDialog({
     );
     // `open`: reopening drops edits abandoned with Close
   }, [classId, allSubjects, open]);
+
+  const removing = allSubjects.filter(
+    (s) =>
+      s.classes?.some((c) => c.externalId === classId) &&
+      !selected.some((chosen) => chosen.externalId === s.externalId)
+  );
 
   const handleSave = async () => {
     if (!classId || selected.length === 0) return;
@@ -96,9 +105,10 @@ export default function AssignToClassesDialog({
             onChange={(e) => setClassId(e.target.value)}
             disabled={classesLoading || classes.length === 0}
             helperText={
-              !classesLoading && classes.length === 0
+              classesLoadError ??
+              (!classesLoading && classes.length === 0
                 ? 'No classes available yet'
-                : undefined
+                : undefined)
             }
             sx={{ width: 220 }}
           >
@@ -135,6 +145,14 @@ export default function AssignToClassesDialog({
               ))
             }
           />
+
+          {removing.length > 0 && (
+            <Alert severity="warning">
+              Saving removes {removing.map((s) => s.name).join(', ')} from this
+              class. Marks already entered stay, but new tests won't offer{' '}
+              {removing.length === 1 ? 'it' : 'them'}.
+            </Alert>
+          )}
         </Stack>
       </DialogContent>
       <DialogActions>
