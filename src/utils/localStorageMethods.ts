@@ -10,18 +10,6 @@ export const readFromLocalStorage = (key: any) => {
   }
 };
 
-export const updateLocalStorageData = (key: any, updateFunction: any) => {
-  try {
-    const existingData = readFromLocalStorage(key);
-
-    const updatedData = updateFunction(existingData);
-
-    writeToLocalStorage(key, updatedData);
-  } catch (error) {
-    console.error('Error updating data in Local Storage:', error);
-  }
-};
-
 export const writeToLocalStorage = (key: any, data: any) => {
   try {
     const jsonData = JSON.stringify(data);
