@@ -21,11 +21,14 @@ import {
 import type { Class, ClassFormValues } from './@types/class.d';
 import ClassListing from './Partials/ClassListing';
 import ClassDialog from './Partials/ClassDialog';
+import LoadError from '../../../common/LoadError';
 import DeleteDialog from '../../../common/Dialogs/DeleteDialog/DeleteDialog';
 
 export default function ClassesManagement() {
   const dispatch = useDispatch<AppDispatch>();
-  const { classes, loading } = useSelector((state: RootState) => state.classes);
+  const { classes, loading, loadError } = useSelector(
+    (state: RootState) => state.classes
+  );
 
   const [search, setSearch] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
@@ -108,6 +111,13 @@ export default function ClassesManagement() {
         </CardContent>
       </Card>
 
+      {loadError && (
+        <LoadError
+          message={loadError}
+          onRetry={() => dispatch(fetchClasses())}
+        />
+      )}
+
       <ClassListing
         rows={filteredClasses}
         loading={loading}
@@ -125,7 +135,7 @@ export default function ClassesManagement() {
       <DeleteDialog
         open={!!classToDelete}
         title="Delete Class?"
-        subtitle={`Are you sure you want to delete class "${classToDelete?.name}"? This action cannot be undone.`}
+        subtitle={`Are you sure you want to delete class "${classToDelete?.name}"? A class with students or marks can't be deleted. This action cannot be undone.`}
         onCancel={() => setClassToDelete(null)}
         onConfirm={handleDeleteConfirm}
       />

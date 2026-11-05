@@ -28,7 +28,7 @@ interface IReportSettingsProps {
 
 // Next year is here because a school year can end in it
 const nextYear = new Date().getFullYear() + 1;
-const YEAR_OPTIONS = Array.from({ length: 7 }, (_, i) => nextYear - i);
+const YEAR_OPTIONS = Array.from({ length: 16 }, (_, i) => nextYear - i);
 
 const ReportSettings = ({
   reportSettings,

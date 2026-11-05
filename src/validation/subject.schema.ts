@@ -12,7 +12,8 @@ export const subjectFormSchema = z.object({
   maxMarks: z.coerce
     .number<string | number>({ error: 'Enter max marks' })
     .int('Max marks must be a whole number')
-    .positive('Max marks must be greater than 0'),
+    .positive('Max marks must be greater than 0')
+    .max(10000, "Max marks can't be above 10000"),
 });
 
 export type SubjectFormInput = z.input<typeof subjectFormSchema>;

@@ -32,24 +32,55 @@ export type FetchReportParams = {
   period: IReportPeriod;
 };
 
+// A period with no data is a normal 200 (rows: [], position: null), not an
+// error. The preview says so.
+const requestReport = async (
+  { studentExternalId, period }: FetchReportParams,
+  signal: AbortSignal
+) => {
+  const query = new URLSearchParams({
+    mode: 'MONTHLY',
+    fromMonth: String(period.from.month),
+    fromYear: String(period.from.year),
+    toMonth: String(period.to.month),
+    toYear: String(period.to.year),
+  }).toString();
+  const response = await apiClient.get<ApiResponse<'report', IReportCard>>(
+    REPORT_ROUTES.STUDENT_REPORT(studentExternalId, query),
+    { signal }
+  );
+  return response[response.keyName];
+};
+
+// Every selected student's card, for printing together. One at a time, in order.
+export const fetchReportsForPrint = createAsyncThunk(
+  'report/fetchForPrint',
+  async (
+    {
+      studentExternalIds,
+      period,
+    }: { studentExternalIds: string[]; period: IReportPeriod },
+    { signal, rejectWithValue }
+  ) => {
+    try {
+      const reports: IReportCard[] = [];
+      for (const studentExternalId of studentExternalIds) {
+        reports.push(
+          await requestReport({ studentExternalId, period }, signal)
+        );
+      }
+      return reports;
+    } catch (error) {
+      return rejectWithValue(messageFrom(error, 'Failed to load report cards'));
+    }
+  }
+);
+
 export const fetchReport = createAsyncThunk(
   'report/fetch',
   async (params: FetchReportParams, { signal, rejectWithValue }) => {
     try {
-      const query = new URLSearchParams({
-        mode: 'MONTHLY',
-        fromMonth: String(params.period.from.month),
-        fromYear: String(params.period.from.year),
-        toMonth: String(params.period.to.month),
-        toYear: String(params.period.to.year),
-      }).toString();
-      const response = await apiClient.get<ApiResponse<'report', IReportCard>>(
-        REPORT_ROUTES.STUDENT_REPORT(params.studentExternalId, query),
-        { signal }
-      );
-      // A period with no data is a normal 200 (rows: [], position: null), not
-      // an error. The preview says so.
-      return response[response.keyName];
+      return await requestReport(params, signal);
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to load report'));
     }

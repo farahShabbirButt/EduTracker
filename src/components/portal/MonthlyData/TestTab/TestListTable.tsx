@@ -22,6 +22,7 @@ import { fetchTests, removeTest } from '../../../../redux/slices/testSlice';
 import { MonthList } from '../../../../config/constants';
 import DropdownMenu from '../../../../common/DropdownMenu/DropdownMenu';
 import DeleteDialog from '../../../../common/Dialogs/DeleteDialog/DeleteDialog';
+import LoadError from '../../../../common/LoadError';
 import type { ApiTest } from '../@types/testData.d';
 
 export default function TestListTable({
@@ -30,7 +31,9 @@ export default function TestListTable({
   onEditTest: (externalId: string) => void;
 }) {
   const dispatch = useDispatch<AppDispatch>();
-  const { tests, loading } = useSelector((state: RootState) => state.tests);
+  const { tests, loading, loadError } = useSelector(
+    (state: RootState) => state.tests
+  );
   const [deleteTarget, setDeleteTarget] = useState<ApiTest | null>(null);
 
   useEffect(() => {
@@ -90,7 +93,18 @@ export default function TestListTable({
             </TableRow>
           ))}
 
-          {!loading && tests.length === 0 && (
+          {loadError && (
+            <TableRow>
+              <TableCell colSpan={5}>
+                <LoadError
+                  message={loadError}
+                  onRetry={() => dispatch(fetchTests())}
+                />
+              </TableCell>
+            </TableRow>
+          )}
+
+          {!loading && !loadError && tests.length === 0 && (
             <TableRow>
               <TableCell colSpan={5}>
                 <Typography variant="body2" color="text.secondary">
@@ -105,7 +119,7 @@ export default function TestListTable({
       <DeleteDialog
         open={!!deleteTarget}
         title="Delete test?"
-        subtitle={`You are about to delete "${deleteTarget?.name ?? ''}".`}
+        subtitle={`You are about to delete "${deleteTarget?.name ?? ''}". A test with marks can't be deleted until they are cleared.`}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
       />

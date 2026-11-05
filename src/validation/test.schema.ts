@@ -27,8 +27,9 @@ export const testFormSchema = z
     year: z.coerce
       .number<string | number>({ error: 'Enter a year' })
       .int('Enter a whole year')
-      .min(2000, 'Year must be between 2000 and 2100')
-      .max(2100, 'Year must be between 2000 and 2100'),
+      .min(2000, 'Enter a year from 2000')
+      // Reports can't pick a later year, so its card could never print
+      .max(new Date().getFullYear() + 1, "Year can't be past next year"),
     classExternalId: z.string().min(1, 'Select a class'),
     testType: z.enum([TestType.MONTHLY, TestType.SESSION], {
       error: 'Select a test type',
@@ -47,7 +48,9 @@ export const testFormSchema = z
     form.subjects.forEach((row, i) => {
       if (
         row.included &&
-        (!Number.isInteger(row.maxMarks) || row.maxMarks <= 0)
+        (!Number.isInteger(row.maxMarks) ||
+          row.maxMarks <= 0 ||
+          row.maxMarks > 10000)
       ) {
         ctx.addIssue({
           code: 'custom',

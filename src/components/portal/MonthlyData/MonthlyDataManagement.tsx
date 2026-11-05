@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Box,
   Tabs,
@@ -17,11 +17,21 @@ import TestMarksEntry from './TestMarksEntry';
 import TestListTable from './TestTab/TestListTable';
 import TestModal from './TestTab/TestModal';
 import ConductEntry from './ConductEntry';
+import DeleteDialog from '../../../common/Dialogs/DeleteDialog/DeleteDialog';
 
 export default function MonthlyDataManagement() {
   const [activeTab, setActiveTab] = useState(0);
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [editTestId, setEditTestId] = useState<string | null>(null);
+
+  const marksDirty = useRef(false);
+  const [pendingTab, setPendingTab] = useState<number | null>(null);
+
+  // Leaving Marks Entry unmounts it, which loses anything typed
+  const handleTabChange = (tab: number) => {
+    if (activeTab === 1 && marksDirty.current) setPendingTab(tab);
+    else setActiveTab(tab);
+  };
 
   const handleAddTest = () => {
     setEditTestId(null);
@@ -47,7 +57,7 @@ export default function MonthlyDataManagement() {
             spacing={2}
             alignItems="center"
           >
-            <Tabs value={activeTab} onChange={(_, val) => setActiveTab(val)}>
+            <Tabs value={activeTab} onChange={(_, val) => handleTabChange(val)}>
               <Tab label="Tests" />
               <Tab label="Marks Entry" />
               <Tab label="Conduct" />
@@ -73,9 +83,28 @@ export default function MonthlyDataManagement() {
           </Paper>
         )}
 
-        {activeTab === 1 && <TestMarksEntry />}
+        {activeTab === 1 && (
+          <TestMarksEntry
+            onDirtyChange={(dirty) => {
+              marksDirty.current = dirty;
+            }}
+          />
+        )}
         {activeTab === 2 && <ConductEntry />}
       </Box>
+
+      <DeleteDialog
+        open={pendingTab !== null}
+        title="Discard unsaved marks?"
+        subtitle="The marks typed here haven't been saved."
+        confirmLabel="Discard"
+        onCancel={() => setPendingTab(null)}
+        onConfirm={() => {
+          marksDirty.current = false;
+          setActiveTab(pendingTab ?? activeTab);
+          setPendingTab(null);
+        }}
+      />
 
       <Modal open={openCreateModal} onClose={() => setOpenCreateModal(false)}>
         <Box

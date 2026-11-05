@@ -55,9 +55,11 @@ export default function TestModal({
   const { tests, testSubjects, testSubjectsLoading, testSubjectsError } =
     useSelector((state: RootState) => state.tests);
   const { classes } = useSelector((state: RootState) => state.classes);
-  const { subjects, loading: subjectsLoading } = useSelector(
-    (state: RootState) => state.subjects
-  );
+  const {
+    subjects,
+    loading: subjectsLoading,
+    loadError: subjectsLoadError,
+  } = useSelector((state: RootState) => state.subjects);
 
   const existingTest = editing
     ? tests.find((t) => t.externalId === editTestId)
@@ -294,8 +296,9 @@ export default function TestModal({
         <MenuItem key={TestType.MONTHLY} value={TestType.MONTHLY}>
           Monthly
         </MenuItem>
-        <MenuItem key={TestType.SESSION} value={TestType.SESSION}>
-          Test Session
+        {/* No card shows session tests yet */}
+        <MenuItem key={TestType.SESSION} value={TestType.SESSION} disabled>
+          Test Session (Coming Soon)
         </MenuItem>
       </FormTextField>
 
@@ -321,7 +324,7 @@ export default function TestModal({
             !testSubjectsError &&
             subjectRows.length === 0 && (
               <Typography variant="body2" color="text.secondary">
-                This class has no subjects assigned.
+                {subjectsLoadError ?? 'This class has no subjects assigned.'}
               </Typography>
             )}
 

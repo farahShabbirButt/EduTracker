@@ -131,7 +131,12 @@ export const ResultCard = forwardRef<HTMLDivElement, ResultCardProps>(
               <TableBody>
                 {data.rows.map((row) => (
                   <TableRow key={row.testExternalId}>
-                    <TableCell sx={{ border }}>{row.testName}</TableCell>
+                    <TableCell sx={{ border }}>
+                      {data.rows.filter((r) => r.testName === row.testName)
+                        .length > 1
+                        ? `${row.testName} (${periodMonth(row)})`
+                        : row.testName}
+                    </TableCell>
                     {subjectList.map((s) => {
                       // No mark entered, or the subject wasn't examined:
                       // blank. A blank and a zero are different facts.

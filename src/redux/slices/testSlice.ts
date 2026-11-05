@@ -19,6 +19,8 @@ interface TestState {
   // Latest fetch only: an aborted or superseded one must not touch the state
   requestId: string | null;
   error: string | null;
+  // Only a failed list load, not a failed save
+  loadError: string | null;
   testSubjects: ApiTestSubject[];
   testSubjectsLoading: boolean;
   testSubjectsError: string | null;
@@ -31,6 +33,7 @@ const initialState: TestState = {
   loading: false,
   requestId: null,
   error: null,
+  loadError: null,
   testSubjects: [],
   testSubjectsLoading: false,
   testSubjectsError: null,
@@ -156,6 +159,7 @@ const testSlice = createSlice({
         state.loading = true;
         state.requestId = action.meta.requestId;
         state.error = null;
+        state.loadError = null;
       })
       .addCase(fetchTests.fulfilled, (state, action) => {
         if (state.requestId !== action.meta.requestId) return;
@@ -167,6 +171,7 @@ const testSlice = createSlice({
         state.loading = false;
         if (action.meta.aborted) return;
         state.error = (action.payload as string) || 'Failed to fetch tests';
+        state.loadError = state.error;
       })
       .addCase(addTest.fulfilled, (state, action) => {
         state.tests.unshift(action.payload.test);

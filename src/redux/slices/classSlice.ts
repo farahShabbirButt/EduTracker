@@ -17,6 +17,8 @@ interface ClassState {
   // Latest fetch only: an aborted or superseded one must not touch the state
   requestId: string | null;
   error: string | null;
+  // Only a failed list load, not a failed save
+  loadError: string | null;
 }
 
 const initialState: ClassState = {
@@ -24,6 +26,7 @@ const initialState: ClassState = {
   loading: false,
   requestId: null,
   error: null,
+  loadError: null,
 };
 
 export const fetchClasses = createAsyncThunk(
@@ -122,6 +125,7 @@ const classSlice = createSlice({
         state.loading = true;
         state.requestId = action.meta.requestId;
         state.error = null;
+        state.loadError = null;
       })
       .addCase(fetchClasses.fulfilled, (state, action) => {
         if (state.requestId !== action.meta.requestId) return;
@@ -133,6 +137,7 @@ const classSlice = createSlice({
         state.loading = false;
         if (action.meta.aborted) return;
         state.error = (action.payload as string) || 'Failed to fetch classes';
+        state.loadError = state.error;
       })
       .addCase(addClass.fulfilled, (state, action) => {
         state.classes.unshift(action.payload.class);

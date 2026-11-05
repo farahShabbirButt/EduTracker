@@ -14,6 +14,7 @@ import {
   CardContent,
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
+import LoadError from '../../../common/LoadError';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -43,9 +44,11 @@ import DropdownMenu from '../../../common/DropdownMenu/DropdownMenu';
 
 const StudentsManagement = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { students: rows, loading } = useSelector(
-    (state: RootState) => state.students
-  );
+  const {
+    students: rows,
+    loading,
+    loadError,
+  } = useSelector((state: RootState) => state.students);
   const { classes } = useSelector((state: RootState) => state.classes);
 
   const [dialogMode, setDialogMode] = useState<
@@ -317,6 +320,13 @@ const StudentsManagement = () => {
         </CardContent>
       </Card>
 
+      {loadError && (
+        <LoadError
+          message={loadError}
+          onRetry={() => dispatch(fetchStudents())}
+        />
+      )}
+
       {/* Table */}
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <DataGrid
@@ -351,9 +361,7 @@ const StudentsManagement = () => {
       <DeleteDialog
         open={dialogMode === 'delete'}
         title="Delete student?"
-        subtitle={`You are about to delete "${rowToDelete?.firstName ?? ''}${
-          rowToDelete?.lastName ? ' ' + rowToDelete.lastName : ''
-        }" (Roll ${rowToDelete?.rollNumber ?? ''}).`}
+        subtitle={`Deleting ${rowToDelete?.firstName ?? ''} ${rowToDelete?.lastName ?? ''} (Roll ${rowToDelete?.rollNumber ?? ''}) also removes their marks and result card, and this can't be undone. Positions in their class may change.`}
         onCancel={() => setDialogMode(null)}
         onConfirm={confirmDelete}
       />
