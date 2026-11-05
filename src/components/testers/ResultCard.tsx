@@ -54,11 +54,32 @@ export const ResultCard = forwardRef<HTMLDivElement, ResultCardProps>(
       <ThemeProvider theme={cardTheme}>
         <Box ref={ref} className="card-root" sx={{ p: 2, color: '#000' }}>
           {/* Header */}
-          <Box sx={{ textAlign: 'center', mb: 1 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          <Box sx={{ position: 'relative', textAlign: 'center', mb: 1 }}>
+            {data.institute.logo && (
+              <Box
+                component="img"
+                src={data.institute.logo}
+                alt=""
+                sx={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  maxWidth: 80,
+                  maxHeight: 56,
+                  objectFit: 'contain',
+                }}
+              />
+            )}
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 700, px: data.institute.logo ? 11 : 0 }}
+            >
               {data.institute.name}
             </Typography>
-            <Typography variant="caption">
+            <Typography
+              variant="caption"
+              sx={{ display: 'block', px: data.institute.logo ? 11 : 0 }}
+            >
               {data.institute.address}, {data.institute.phone}
             </Typography>
           </Box>
@@ -272,7 +293,7 @@ export const ResultCard = forwardRef<HTMLDivElement, ResultCardProps>(
                 <Typography sx={{ whiteSpace: 'pre-wrap' }}>
                   {data.overall.remarks || ''}
                 </Typography>
-                <Grid container sx={{ mt: 5 }}>
+                <Grid container className="card-signatures" sx={{ mt: 5 }}>
                   <Grid size={6}>
                     <Typography>
                       Principal’s Signature __________________

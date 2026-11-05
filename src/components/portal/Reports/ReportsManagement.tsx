@@ -27,9 +27,10 @@ const schoolYearPeriod = (startMonth: number) => {
 
 const ReportsManagement = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const startMonth = useSelector(
-    (state: RootState) => state.institute.institute?.schoolYearStartMonth
+  const startDate = useSelector(
+    (state: RootState) => state.institute.institute?.schoolYearStartDate
   );
+  const startMonth = startDate ? Number(startDate.slice(5, 7)) : undefined;
   const [reportSettings, setReportSettings] = useState<IReportSettings>({
     reportMode: TestType.MONTHLY,
     classId: '',

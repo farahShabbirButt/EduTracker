@@ -9,6 +9,7 @@ export const ResultSampleData: IReportCard = {
     name: 'FARRUKH ACADEMY OF SCIENCE',
     address: 'Dhobi Ghat Stop Near Nafeerabad Graveyard Shalimar Town Lahore',
     phone: '+92 324 0012215',
+    logo: null,
   },
   student: {
     name: 'Qasim',

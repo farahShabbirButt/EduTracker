@@ -11,7 +11,10 @@ export type Institute = {
   name: string;
   address: string;
   phone: string;
-  schoolYearStartMonth: number;
+  // YYYY-MM-DD
+  schoolYearStartDate: string;
+  // A data URL
+  logo: string | null;
 };
 
 export type InstituteFormValues = Omit<Institute, 'externalId'>;

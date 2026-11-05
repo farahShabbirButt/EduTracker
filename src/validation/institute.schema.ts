@@ -18,11 +18,13 @@ export const instituteFormSchema = z.object({
     .trim()
     .min(1, 'Phone is required')
     .max(30, 'Phone must be at most 30 characters'),
-  schoolYearStartMonth: z.coerce
-    .number<string | number>()
-    .int()
-    .min(1, 'Select a month')
-    .max(12, 'Select a month'),
+  schoolYearStartDate: z.iso
+    .date('Enter the date the school year starts')
+    .refine(
+      (date) => date >= '2000-01-01' && date <= '2100-12-31',
+      'Enter a date between 2000 and 2100'
+    ),
+  logo: z.string().nullable(),
 });
 
 export type InstituteFormInput = z.input<typeof instituteFormSchema>;
