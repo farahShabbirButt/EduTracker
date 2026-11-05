@@ -2,7 +2,8 @@
 @page { size: A4 landscape; margin: 8mm; }
 
 @media print {
-  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; }
+  /* Block, not the app's flex: a flex body lets a wide card run past the margin */
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; display: block; }
   /* The dark theme's page colours are copied into the print frame too */
   html, body { background: #fff !important; color: #000 !important; }
   .no-print { display: none !important; }
@@ -21,5 +22,25 @@
 /* After the base rule, so these win */
 @media print {
   /* Fits the A4 area inside the margins, and keeps the card on one sheet */
-  .card-root { width: 100%; min-height: 0; break-inside: avoid; }
+  .card-root {
+    /* 1px short, or the page clips the right-hand borders */
+    width: calc(100% - 1px);
+    min-height: 0;
+    padding: 0 !important;
+    break-inside: avoid;
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  /* A full year of tests has to fit, so everything is tighter than on screen */
+  .card-root .MuiTypography-root { font-size: 12px; line-height: 1.25; }
+  .card-root h6.MuiTypography-root { font-size: 16px; }
+  .card-root .MuiBox-root { padding: 2px 4px; }
+  .card-root th,
+  .card-root td { padding: 3px 2px; font-size: 12px; line-height: 1.25; }
+  /* One line per test */
+  .card-root td:first-child { white-space: nowrap; }
+  .card-root .MuiGrid-container { margin-top: 3px; margin-bottom: 3px; }
+  .card-root .MuiDivider-root { margin-top: 3px; margin-bottom: 3px; }
+  .card-root .card-signatures { margin-top: 28px; }
 }

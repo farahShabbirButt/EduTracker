@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type ChangeEvent } from 'react';
 import {
   Alert,
   Box,
@@ -9,7 +9,7 @@ import {
   CircularProgress,
   Divider,
   Grid,
-  MenuItem,
+  Typography,
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
@@ -21,12 +21,33 @@ import {
   saveInstitute,
 } from '../../../redux/slices/instituteSlice';
 import FormTextField from '../../../common/Form/FormTextField';
-import { MonthList } from '../../../config/constants';
 import {
   instituteFormSchema,
   type InstituteFormInput,
   type InstituteFormOutput,
 } from '../../../validation/institute.schema';
+
+const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+const LOGO_MAX_BYTES = 500 * 1024;
+const LOGO_MAX_WIDTH = 400;
+const LOGO_MAX_HEIGHT = 200;
+
+// Every result card carries the logo, so it's kept far smaller than it prints sharp at.
+// Throws if the file isn't really an image.
+const shrinkLogo = async (file: File) => {
+  const image = await createImageBitmap(file);
+  const scale = Math.min(
+    1,
+    LOGO_MAX_WIDTH / image.width,
+    LOGO_MAX_HEIGHT / image.height
+  );
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(image.width * scale);
+  canvas.height = Math.round(image.height * scale);
+  canvas.getContext('2d')?.drawImage(image, 0, 0, canvas.width, canvas.height);
+  image.close();
+  return canvas.toDataURL('image/webp');
+};
 
 const SchoolDetails = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -38,6 +59,8 @@ const SchoolDetails = () => {
     control,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { isSubmitting },
   } = useForm<InstituteFormInput, unknown, InstituteFormOutput>({
     resolver: zodResolver(instituteFormSchema),
@@ -45,9 +68,12 @@ const SchoolDetails = () => {
       name: '',
       address: '',
       phone: '',
-      schoolYearStartMonth: 1,
+      schoolYearStartDate: '',
+      logo: null,
     },
   });
+
+  const logo = watch('logo');
 
   useEffect(() => {
     dispatch(fetchInstitute());
@@ -59,10 +85,33 @@ const SchoolDetails = () => {
         name: institute.name,
         address: institute.address,
         phone: institute.phone,
-        schoolYearStartMonth: institute.schoolYearStartMonth,
+        schoolYearStartDate: institute.schoolYearStartDate,
+        logo: institute.logo,
       });
     }
   }, [institute, reset]);
+
+  const handleLogoPicked = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    // So picking the same file again still fires
+    event.target.value = '';
+    if (!file) return;
+
+    if (!LOGO_TYPES.includes(file.type)) {
+      toast.error('Logo must be a PNG, JPG or WEBP image');
+      return;
+    }
+    if (file.size > LOGO_MAX_BYTES) {
+      toast.error('Logo must be 500 KB or smaller');
+      return;
+    }
+
+    try {
+      setValue('logo', await shrinkLogo(file));
+    } catch {
+      toast.error('Could not read that image');
+    }
+  };
 
   const onSave = async (values: InstituteFormOutput) => {
     const result = await dispatch(saveInstitute(values));
@@ -77,7 +126,7 @@ const SchoolDetails = () => {
     <Card>
       <CardHeader
         title="School Details"
-        subheader="Printed on every result card. The school year sets the period on Reports."
+        subheader="Printed on every result card. The school year start date sets the period on Reports."
       />
       <Divider />
       <CardContent>
@@ -121,19 +170,53 @@ const SchoolDetails = () => {
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <FormTextField
-                  name="schoolYearStartMonth"
+                  name="schoolYearStartDate"
                   control={control}
-                  select
-                  label="School Year Starts In"
+                  type="date"
+                  label="School Year Start Date"
                   required
                   fullWidth
+                  slotProps={{ inputLabel: { shrink: true } }}
+                />
+              </Grid>
+              <Grid size={12}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  School Logo
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  {logo && (
+                    <Box
+                      component="img"
+                      src={logo}
+                      alt="School logo"
+                      sx={{ maxWidth: 80, maxHeight: 56, objectFit: 'contain' }}
+                    />
+                  )}
+                  <Button component="label" variant="outlined">
+                    {logo ? 'Change Logo' : 'Upload Logo'}
+                    <input
+                      hidden
+                      type="file"
+                      accept={LOGO_TYPES.join(',')}
+                      onChange={handleLogoPicked}
+                    />
+                  </Button>
+                  {logo && (
+                    <Button
+                      color="error"
+                      onClick={() => setValue('logo', null)}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block', mt: 1 }}
                 >
-                  {MonthList.map((m) => (
-                    <MenuItem key={m.value} value={m.value}>
-                      {m.label}
-                    </MenuItem>
-                  ))}
-                </FormTextField>
+                  PNG, JPG or WEBP, up to 500 KB. Printed on every result card.
+                </Typography>
               </Grid>
             </Grid>
             <Box sx={{ display: 'flex', mt: 2, justifyContent: 'end' }}>

@@ -44,7 +44,12 @@ export interface IReportPeriod {
 }
 
 export interface IReportCard {
-  institute: { name: string; address: string; phone: string };
+  institute: {
+    name: string;
+    address: string;
+    phone: string;
+    logo: string | null;
+  };
   student: {
     name: string;
     fatherName: string;
