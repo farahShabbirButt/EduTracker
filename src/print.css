@@ -98,6 +98,9 @@
   background: var(--card-tint);
   font-weight: 800;
 }
+.card-marks td.card-total-cell {
+  white-space: nowrap;
+}
 .card-marks th:first-child,
 .card-marks td:first-child {
   text-align: left;

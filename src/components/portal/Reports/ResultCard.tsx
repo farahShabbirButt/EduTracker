@@ -10,6 +10,10 @@ type ResultCardProps = {
 };
 
 // print.css styles the card, because it must look the same in the print frame
+// Every card has room for a full year, so it's the same size however many
+// tests have happened. Unused rows print empty.
+const STANDARD_ROWS = 12;
+
 const cardVariables = {
   '--card-accent': cardColors.accent,
   '--card-label': cardColors.label,
@@ -42,6 +46,7 @@ export const ResultCard = forwardRef<HTMLDivElement, ResultCardProps>(
     // Columns come from the endpoint's explicit `subjects` list — NEVER from a
     // single row's `marks`. A test that omits a subject must not be able to
     // drop that subject's column.
+    const blankRows = Math.max(0, STANDARD_ROWS - data.rows.length);
     const { overall, position, conduct, student, institute } = data;
 
     return (
@@ -93,28 +98,51 @@ export const ResultCard = forwardRef<HTMLDivElement, ResultCardProps>(
                       ? `${row.testName} (${periodMonth(row)})`
                       : row.testName}
                   </td>
-                  {data.subjects.map((s) => (
+                  {data.subjects.map((s) => {
                     // No mark entered, or the subject wasn't examined:
                     // blank. A blank and a zero are different facts.
-                    <td key={s.externalId}>
-                      {row.marks[s.externalId]?.obtained ?? ''}
-                    </td>
-                  ))}
-                  <td>{row.maxTotal ? row.total : ''}</td>
+                    const mark = row.marks[s.externalId];
+                    return (
+                      <td key={s.externalId} className="card-total-cell">
+                        {mark && mark.obtained !== null
+                          ? `${mark.obtained} / ${mark.max}`
+                          : ''}
+                      </td>
+                    );
+                  })}
+                  <td className="card-total-cell">
+                    {row.maxTotal ? `${row.total} / ${row.maxTotal}` : ''}
+                  </td>
                   <td>{row.percentage?.toFixed(2) ?? ''}</td>
                   <td>{row.grade ?? ''}</td>
                 </tr>
               ))}
+              {Array.from({ length: blankRows }, (_, i) => (
+                <tr key={i}>
+                  <td>&nbsp;</td>
+                  {data.subjects.map((s) => (
+                    <td key={s.externalId} />
+                  ))}
+                  <td />
+                  <td />
+                  <td />
+                </tr>
+              ))}
               <tr className="card-total">
                 <td>Subject Total</td>
-                {data.subjects.map((s) => (
-                  <td key={s.externalId}>
-                    {data.subjectTotals[s.externalId]?.max
-                      ? data.subjectTotals[s.externalId].obtained
-                      : ''}
-                  </td>
-                ))}
-                <td>{overall.totalMarks ? overall.obtainedMarks : ''}</td>
+                {data.subjects.map((s) => {
+                  const total = data.subjectTotals[s.externalId];
+                  return (
+                    <td key={s.externalId} className="card-total-cell">
+                      {total?.max ? `${total.obtained} / ${total.max}` : ''}
+                    </td>
+                  );
+                })}
+                <td className="card-total-cell">
+                  {overall.totalMarks
+                    ? `${overall.obtainedMarks} / ${overall.totalMarks}`
+                    : ''}
+                </td>
                 <td />
                 <td />
               </tr>
