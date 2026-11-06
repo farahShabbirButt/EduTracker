@@ -17,7 +17,10 @@ import {
   TableRow,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 import { toast } from 'react-toastify';
 import type { AppDispatch, RootState } from '../../../redux/store';
 import { fetchClasses } from '../../../redux/slices/classSlice';
@@ -35,8 +38,20 @@ import { CONDUCT_RATING_OPTIONS, ConductRating } from './@types/conduct.d';
 type Rating = ConductRating | '';
 type Ratings = Record<string, { behaviour: Rating; uniform: Rating }>;
 
+// Each student's cells stack on a phone
+const stackedRow = (theme: Theme) => ({
+  [theme.breakpoints.down('sm')]: {
+    display: 'block',
+    borderBottom: 1,
+    borderColor: 'divider',
+    '& td': { display: 'block', borderBottom: 0 },
+  },
+});
+
 export default function ConductPage() {
   const dispatch = useDispatch<AppDispatch>();
+  const theme = useTheme();
+  const phone = useMediaQuery(theme.breakpoints.down('sm'));
   const { setDirty, confirmLeaving } = useNavigationGuard();
   const [searchParams] = useSearchParams();
   const classes = useSelector((state: RootState) => state.classes.classes);
@@ -171,17 +186,20 @@ export default function ConductPage() {
         select
         size="small"
         fullWidth
+        // The column headings are hidden on a phone
+        label={phone ? label : undefined}
         value={value}
         disabled={saving}
-        aria-label={`${label} for ${name}`}
         slotProps={{
+          inputLabel: { shrink: true },
           select: {
             displayEmpty: true,
+            notched: phone || undefined,
             inputProps: { 'aria-label': `${label} for ${name}` },
           },
         }}
         sx={(theme) => ({
-          minWidth: 170,
+          minWidth: { sm: 170 },
           '& .MuiOutlinedInput-notchedOutline': value
             ? undefined
             : { borderColor: theme.palette.studio.amber },
@@ -298,7 +316,9 @@ export default function ConductPage() {
         {rows && rows.length > 0 ? (
           <TableContainer>
             <Table size="small">
-              <TableHead>
+              <TableHead
+                sx={{ display: { xs: 'none', sm: 'table-header-group' } }}
+              >
                 <TableRow>
                   <TableCell>Student</TableCell>
                   <TableCell>Behaviour</TableCell>
@@ -311,7 +331,7 @@ export default function ConductPage() {
                     .filter(Boolean)
                     .join(' ');
                   return (
-                    <TableRow key={row.externalId}>
+                    <TableRow key={row.externalId} sx={stackedRow}>
                       <TableCell sx={{ whiteSpace: 'nowrap' }}>
                         <Box
                           sx={{

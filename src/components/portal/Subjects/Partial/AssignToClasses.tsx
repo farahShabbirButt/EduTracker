@@ -5,7 +5,6 @@ import {
   Autocomplete,
   Button,
   Chip,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -18,11 +17,14 @@ import { toast } from 'react-toastify';
 import type { AppDispatch, RootState } from '../../../../redux/store';
 import { fetchClasses } from '../../../../redux/slices/classSlice';
 import { assignSubjectsToClass } from '../../../../redux/slices/subjectSlice';
+import FormPanel from '../../../../common/FormPanel';
 import type { ApiSubject } from '../@types/subject.d';
 
 type Props = {
   open: boolean;
   allSubjects: ApiSubject[]; // full list to choose from
+  // The class to open on, when opened from that class
+  initialClassId?: string;
   onClose: () => void;
 };
 
@@ -30,6 +32,7 @@ export default function AssignToClassesDialog({
   open,
   onClose,
   allSubjects,
+  initialClassId,
 }: Props) {
   const dispatch = useDispatch<AppDispatch>();
   const {
@@ -48,12 +51,16 @@ export default function AssignToClassesDialog({
     }
   }, [open, classes.length, dispatch]);
 
-  // Default to the first class once the list is available.
+  // Open on the class asked for. Otherwise keep the last one, if it still exists.
   React.useEffect(() => {
-    if (open && !classId && classes.length > 0) {
+    if (!open || classes.length === 0) return;
+    if (initialClassId) {
+      setClassId(initialClassId);
+    } else if (!classes.some((c) => c.externalId === classId)) {
       setClassId(classes[0].externalId);
     }
-  }, [open, classId, classes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialClassId, classes]);
 
   React.useEffect(() => {
     if (!classId) {
@@ -94,7 +101,7 @@ export default function AssignToClassesDialog({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <FormPanel open={open} label="Assign subjects to a class">
       <DialogTitle>Assign Subjects to Classes</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
@@ -110,7 +117,7 @@ export default function AssignToClassesDialog({
                 ? 'No classes available yet'
                 : undefined)
             }
-            sx={{ width: 220 }}
+            fullWidth
           >
             {classes.map((c) => (
               <MenuItem key={c.externalId} value={c.externalId}>
@@ -165,6 +172,6 @@ export default function AssignToClassesDialog({
           Save
         </Button>
       </DialogActions>
-    </Dialog>
+    </FormPanel>
   );
 }

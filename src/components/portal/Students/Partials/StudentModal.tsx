@@ -2,7 +2,6 @@ import {
   Alert,
   Button,
   Checkbox,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -20,6 +19,7 @@ import type { Student, StudentFormValues } from '../@types/student.d';
 import type { RootState, AppDispatch } from '../../../../redux/store';
 import { fetchClasses } from '../../../../redux/slices/classSlice';
 import { fetchSubjects } from '../../../../redux/slices/subjectSlice';
+import FormPanel from '../../../../common/FormPanel';
 import FormTextField from '../../../../common/Form/FormTextField';
 import {
   studentFormSchema,
@@ -113,7 +113,7 @@ const StudentModal = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <FormPanel open={open} label="Student details">
       <form
         noValidate
         onSubmit={handleSubmit((values) => onSubmit(toPayload(values)))}
@@ -265,7 +265,7 @@ const StudentModal = ({
           </Button>
         </DialogActions>
       </form>
-    </Dialog>
+    </FormPanel>
   );
 };
 export default StudentModal;

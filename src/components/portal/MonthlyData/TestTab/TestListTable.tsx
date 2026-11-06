@@ -25,6 +25,9 @@ import DeleteDialog from '../../../../common/Dialogs/DeleteDialog/DeleteDialog';
 import LoadError from '../../../../common/LoadError';
 import type { ApiTest } from '../@types/testData.d';
 
+// Folded into the test's own cell on phones
+const onlyWide = { display: { xs: 'none', sm: 'table-cell' } };
+
 export default function TestListTable({
   onEditTest,
 }: {
@@ -61,9 +64,11 @@ export default function TestListTable({
           <TableHead>
             <TableRow>
               <TableCell>Test</TableCell>
-              <TableCell>Class</TableCell>
-              <TableCell>Month</TableCell>
-              <TableCell sx={{ minWidth: 190 }}>Marks entered</TableCell>
+              <TableCell sx={onlyWide}>Class</TableCell>
+              <TableCell sx={onlyWide}>Month</TableCell>
+              <TableCell sx={{ minWidth: { xs: 90, sm: 190 } }}>
+                Marks entered
+              </TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -73,9 +78,17 @@ export default function TestListTable({
               const percent = percentOf(t.marksEntered, t.marksExpected);
               return (
                 <TableRow key={t.externalId}>
-                  <TableCell sx={{ fontWeight: 700 }}>{t.name}</TableCell>
-                  <TableCell>{t.class?.name}</TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                  <TableCell sx={{ fontWeight: 700 }}>
+                    {t.name}
+                    <Typography
+                      variant="caption"
+                      sx={{ display: { xs: 'block', sm: 'none' } }}
+                    >
+                      {t.class?.name}, {monthLabel(t.month)} {t.year}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={onlyWide}>{t.class?.name}</TableCell>
+                  <TableCell sx={{ ...onlyWide, whiteSpace: 'nowrap' }}>
                     {monthLabel(t.month)} {t.year}
                   </TableCell>
                   <TableCell>

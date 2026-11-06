@@ -1,6 +1,5 @@
 import {
   Button,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -10,6 +9,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { Class, ClassFormValues } from '../@types/class.d';
+import FormPanel from '../../../../common/FormPanel';
 import FormTextField from '../../../../common/Form/FormTextField';
 import {
   classFormSchema,
@@ -41,16 +41,16 @@ export default function ClassDialog({ open, initial, onClose, onSave }: Props) {
   }, [initial, open, reset]);
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+    <FormPanel open={open} label="Class details">
       <form noValidate onSubmit={handleSubmit((values) => onSave(values))}>
-        <DialogTitle>{initial ? 'Edit Class' : 'Add New Class'}</DialogTitle>
+        <DialogTitle>{initial ? 'Edit class' : 'Add class'}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <FormTextField
               name="name"
               control={control}
               autoFocus
-              label="Class Name"
+              label="Class name"
               fullWidth
             />
           </Stack>
@@ -58,10 +58,10 @@ export default function ClassDialog({ open, initial, onClose, onSave }: Props) {
         <DialogActions>
           <Button onClick={onClose}>Cancel</Button>
           <Button type="submit" variant="contained" disabled={isSubmitting}>
-            {initial ? 'Save Changes' : 'Create'}
+            {initial ? 'Save changes' : 'Add class'}
           </Button>
         </DialogActions>
       </form>
-    </Dialog>
+    </FormPanel>
   );
 }

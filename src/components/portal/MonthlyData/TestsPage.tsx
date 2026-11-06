@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Box, Button, Card, Modal } from '@mui/material';
+import { Box, Button, Card } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import TestListTable from './TestTab/TestListTable';
 import TestModal from './TestTab/TestModal';
+import FormPanel from '../../../common/FormPanel';
 
 export default function TestsPage() {
   const [openCreateModal, setOpenCreateModal] = useState(false);
@@ -33,25 +34,14 @@ export default function TestsPage() {
         <TestListTable onEditTest={handleEditTest} />
       </Card>
 
-      <Modal open={openCreateModal} onClose={() => setOpenCreateModal(false)}>
-        <Box
-          sx={{
-            width: { xs: 'calc(100% - 32px)', sm: 500 },
-            mx: 'auto',
-            mt: { xs: 2, sm: 5 },
-            maxHeight: { xs: 'calc(100vh - 32px)', sm: 'calc(100vh - 80px)' },
-            overflow: 'auto',
-            backgroundColor: 'background.paper',
-            borderRadius: 2,
-            p: 3,
-          }}
-        >
+      <FormPanel open={openCreateModal} label="Test details">
+        <Box sx={{ p: 3, overflow: 'auto' }}>
           <TestModal
             onClose={() => setOpenCreateModal(false)}
             editTestId={editTestId}
           />
         </Box>
-      </Modal>
+      </FormPanel>
     </>
   );
 }

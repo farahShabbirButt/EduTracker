@@ -202,7 +202,7 @@ export default function DashboardPage() {
     {
       label: 'Set grade boundaries',
       done: setup.gradeBands,
-      to: routes.portal.subjects,
+      to: `${routes.portal.subjects}?tab=grades`,
     },
   ];
   const stepsDone = steps.filter((s) => s.done).length;
