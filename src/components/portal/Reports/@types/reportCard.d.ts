@@ -63,7 +63,13 @@ export interface IReportCard {
   rows: IReportCardRow[];
   subjectTotals: Record<string, { obtained: number; max: number }>;
   overall: IReportCardOverall;
-  conduct: { behaviour: string | null; uniformCleanliness: string | null };
+  // The month the ratings are from
+  conduct: {
+    behaviour: string | null;
+    uniformCleanliness: string | null;
+    month: number | null;
+    year: number | null;
+  };
   position: IReportCardPosition | null;
   missingMarks: { testName: string; subjectName: string }[];
 }

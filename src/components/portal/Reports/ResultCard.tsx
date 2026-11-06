@@ -123,6 +123,14 @@ export const ResultCard = forwardRef<HTMLDivElement, ResultCardProps>(
           </table>
 
           <div className="card-conduct">
+            {conduct.month && conduct.year && (
+              <span>
+                Conduct for{' '}
+                <b>
+                  {periodMonth({ month: conduct.month, year: conduct.year })}
+                </b>
+              </span>
+            )}
             <span>
               Behaviour: <b>{conductLabel(conduct.behaviour)}</b>
             </span>

@@ -427,6 +427,7 @@ const StudentsManagement = () => {
         onSubmit={handleSubmit}
         mode={editingRow ? 'edit' : 'create'}
         initial={editingRow ?? undefined}
+        defaultClassId={classFilter === 'All' ? undefined : classFilter}
       />
 
       {/* Delete confirm */}
