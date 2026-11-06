@@ -48,15 +48,14 @@ export const ResultCard = forwardRef<HTMLDivElement, ResultCardProps>(
       <div ref={ref} className="card-root" style={cardVariables}>
         <div className="card-strip" />
         <div className="card-body">
-          <div className="card-head">
-            <span>{institute.logo && <img src={institute.logo} alt="" />}</span>
+          <div className={`card-head ${institute.logo ? 'with-logo' : ''}`}>
+            {institute.logo && <img src={institute.logo} alt="" />}
             <div>
               <b>{institute.name}</b>
               <span>
                 {institute.address}, {institute.phone}
               </span>
             </div>
-            <span />
           </div>
 
           <div className="card-title">{data.title}</div>

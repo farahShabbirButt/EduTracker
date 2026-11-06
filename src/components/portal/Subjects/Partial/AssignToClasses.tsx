@@ -1,10 +1,7 @@
-// src/components/subjects/AssignToGradesDialog.tsx
 import * as React from 'react';
 import {
   Alert,
-  Autocomplete,
   Button,
-  Chip,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -16,8 +13,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import type { AppDispatch, RootState } from '../../../../redux/store';
 import { fetchClasses } from '../../../../redux/slices/classSlice';
+import { fetchDashboard } from '../../../../redux/slices/dashboardSlice';
 import { assignSubjectsToClass } from '../../../../redux/slices/subjectSlice';
 import FormPanel from '../../../../common/FormPanel';
+import SubjectPicker from '../../../../common/SubjectPicker';
 import type { ApiSubject } from '../@types/subject.d';
 
 type Props = {
@@ -94,6 +93,7 @@ export default function AssignToClassesDialog({
 
     if (assignSubjectsToClass.fulfilled.match(result)) {
       toast.success(result.payload);
+      dispatch(fetchDashboard());
       onClose();
     } else {
       toast.error((result.payload as string) || 'Failed to assign subjects');
@@ -102,7 +102,7 @@ export default function AssignToClassesDialog({
 
   return (
     <FormPanel open={open} label="Assign subjects to a class">
-      <DialogTitle>Assign Subjects to Classes</DialogTitle>
+      <DialogTitle>Assign subjects to a class</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
           <TextField
@@ -126,30 +126,11 @@ export default function AssignToClassesDialog({
             ))}
           </TextField>
 
-          <Autocomplete
-            multiple
-            options={allSubjects}
-            getOptionLabel={(o) => o.name}
-            isOptionEqualToValue={(option, value) =>
-              option.externalId === value.externalId
-            }
-            value={selected}
-            onChange={(_, v) => setSelected(v)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Select subjects"
-                placeholder="Start typing..."
-              />
-            )}
-            renderTags={(value, getTagProps) =>
-              value.map((option, index) => (
-                <Chip
-                  {...getTagProps({ index })}
-                  key={option.externalId}
-                  label={`${option.name} (${option.maxMarks})`}
-                />
-              ))
+          <SubjectPicker
+            subjects={allSubjects}
+            selected={selected.map((s) => s.externalId)}
+            onChange={(ids) =>
+              setSelected(allSubjects.filter((s) => ids.includes(s.externalId)))
             }
           />
 
@@ -163,13 +144,13 @@ export default function AssignToClassesDialog({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Close</Button>
+        <Button onClick={onClose}>Cancel</Button>
         <Button
           variant="contained"
           disabled={!classId || selected.length === 0 || submitting}
           onClick={handleSave}
         >
-          Save
+          Save subjects
         </Button>
       </DialogActions>
     </FormPanel>

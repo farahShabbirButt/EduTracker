@@ -27,6 +27,7 @@ import AssignToClasses from './Partial/AssignToClasses';
 import GradeBoundaries from './Partial/GradeBoundries';
 import DeleteDialog from '../../../common/Dialogs/DeleteDialog/DeleteDialog';
 import LoadError from '../../../common/LoadError';
+import LabeledSelect from '../../../common/Form/LabeledSelect';
 
 export default function SubjectsManagement() {
   const dispatch = useDispatch<AppDispatch>();
@@ -118,7 +119,7 @@ export default function SubjectsManagement() {
       <Stack
         direction={{ xs: 'column', lg: 'row' }}
         spacing={1.5}
-        alignItems={{ lg: 'center' }}
+        alignItems={{ lg: 'flex-end' }}
       >
         <Tabs
           value={tab}
@@ -135,17 +136,20 @@ export default function SubjectsManagement() {
             <TextField
               size="small"
               placeholder="Search subjects"
+              sx={{ '& .MuiInputBase-root': { minHeight: 44 } }}
               slotProps={{ htmlInput: { 'aria-label': 'Search subjects' } }}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <TextField
-              select
-              size="small"
+            <LabeledSelect
               label="Class"
+              placeholder="All classes"
               value={classFilter}
-              onChange={(e) => setClassFilter(e.target.value)}
-              sx={{ minWidth: 170 }}
+              minWidth={170}
+              options={Object.fromEntries(
+                classes.map((c) => [c.externalId, c.name])
+              )}
+              onChange={setClassFilter}
             >
               <MenuItem value="">All classes</MenuItem>
               {classes.map((c) => (
@@ -153,7 +157,7 @@ export default function SubjectsManagement() {
                   {c.name}
                 </MenuItem>
               ))}
-            </TextField>
+            </LabeledSelect>
             <Button
               variant="outlined"
               sx={{ flex: 'none' }}

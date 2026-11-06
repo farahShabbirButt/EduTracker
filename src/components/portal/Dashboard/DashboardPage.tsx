@@ -18,6 +18,7 @@ import PeopleOutlineOutlinedIcon from '@mui/icons-material/PeopleOutlineOutlined
 import LayersOutlinedIcon from '@mui/icons-material/LayersOutlined';
 import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
 import AssignmentTurnedInOutlinedIcon from '@mui/icons-material/AssignmentTurnedInOutlined';
+import GridOnOutlinedIcon from '@mui/icons-material/GridOnOutlined';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import type { ReactNode } from 'react';
 import type { AppDispatch, RootState } from '../../../redux/store';
@@ -53,6 +54,7 @@ const Ring = ({ value }: { value: number }) => {
         width: { xs: 76, sm: 136 },
         height: { xs: 76, sm: 136 },
         flex: 'none',
+        zIndex: 1,
       }}
     >
       <Box
@@ -212,17 +214,28 @@ export default function DashboardPage() {
       <Box
         sx={(theme) => ({
           position: 'relative',
+          overflow: 'hidden',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 3.5,
+          // Two soft circles, so the block isn't a flat slab
+          '&::before, &::after': {
+            content: '""',
+            position: 'absolute',
+            borderRadius: '50%',
+            bgcolor: theme.palette.studio.sidebarHover,
+            pointerEvents: 'none',
+          },
+          '&::before': { width: 280, height: 280, right: -70, top: -110 },
+          '&::after': { width: 170, height: 170, right: 240, bottom: -120 },
           p: { xs: 2.75, sm: 4.25 },
           bgcolor: theme.palette.studio.hero,
           color: theme.palette.studio.sidebarInkStrong,
           borderRadius: `${theme.studio.radii.xlarge}px`,
         })}
       >
-        <Box sx={{ minWidth: 0 }}>
+        <Box sx={{ minWidth: 0, position: 'relative', zIndex: 1 }}>
           <Typography
             component="h2"
             sx={(theme) => ({
@@ -326,9 +339,9 @@ export default function DashboardPage() {
         />
       </Box>
 
-      <Grid container spacing={2} alignItems="flex-start">
+      <Grid container spacing={2}>
         <Grid size={{ xs: 12, lg: 7 }}>
-          <Card sx={{ p: 2.75 }}>
+          <Card sx={{ p: 2.75, height: '100%' }}>
             <Box
               sx={{
                 display: 'flex',
@@ -350,6 +363,7 @@ export default function DashboardPage() {
             </Box>
             {tests.length === 0 ? (
               <EmptyState
+                icon={<GridOnOutlinedIcon />}
                 title="Nothing to enter yet"
                 detail="Tests you add for this month appear here."
               />
@@ -414,113 +428,121 @@ export default function DashboardPage() {
           </Card>
         </Grid>
         <Grid size={{ xs: 12, lg: 5 }}>
-          <Stack spacing={2}>
-            <Card sx={{ p: 2.75 }}>
-              <Typography variant="h5" component="h2" sx={{ mb: 1 }}>
-                Needs attention
+          <Card
+            sx={{
+              p: 2.75,
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <Typography variant="h5" component="h2" sx={{ mb: 1 }}>
+              Needs attention
+            </Typography>
+            {attention.length === 0 ? (
+              <Typography variant="body2">
+                Nothing needs your attention.
               </Typography>
-              {attention.length === 0 ? (
-                <Typography variant="body2">
-                  Nothing needs your attention.
+            ) : (
+              <Stack spacing={1} sx={{ maxHeight: 340, overflowY: 'auto' }}>
+                {attention.map((item, index) => (
+                  <ButtonBase
+                    key={index}
+                    onClick={() => navigate(attentionPath(item))}
+                    sx={(theme) => ({
+                      flex: 'none',
+                      display: 'flex',
+                      justifyContent: 'flex-start',
+                      alignItems: 'flex-start',
+                      gap: 1.25,
+                      p: 1.5,
+                      textAlign: 'left',
+                      color: theme.palette.studio.amberInk,
+                      bgcolor: theme.palette.studio.amberSoft,
+                      borderRadius: `${theme.studio.radii.medium}px`,
+                      '&:active': {
+                        transform: `scale(${theme.studio.motion.pressScale})`,
+                      },
+                    })}
+                  >
+                    <WarningAmberOutlinedIcon fontSize="small" />
+                    <Box>
+                      <Typography sx={{ fontWeight: 700 }}>
+                        {item.title}
+                      </Typography>
+                      <Typography variant="body2" color="inherit">
+                        {item.detail}
+                      </Typography>
+                    </Box>
+                  </ButtonBase>
+                ))}
+              </Stack>
+            )}
+          </Card>
+        </Grid>
+        {stepsDone < steps.length && (
+          <Grid size={12}>
+            <Card sx={{ p: 2.75 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 1,
+                }}
+              >
+                <Typography variant="h5" component="h2">
+                  Setup guide
                 </Typography>
-              ) : (
-                <Stack spacing={1}>
-                  {attention.map((item, index) => (
-                    <ButtonBase
-                      key={index}
-                      onClick={() => navigate(attentionPath(item))}
-                      sx={(theme) => ({
-                        display: 'flex',
-                        justifyContent: 'flex-start',
-                        alignItems: 'flex-start',
-                        gap: 1.25,
-                        p: 1.5,
-                        textAlign: 'left',
-                        color: theme.palette.studio.amberInk,
-                        bgcolor: theme.palette.studio.amberSoft,
-                        borderRadius: `${theme.studio.radii.medium}px`,
-                        '&:active': {
-                          transform: `scale(${theme.studio.motion.pressScale})`,
-                        },
-                      })}
-                    >
-                      <WarningAmberOutlinedIcon fontSize="small" />
-                      <Box>
-                        <Typography sx={{ fontWeight: 700 }}>
-                          {item.title}
-                        </Typography>
-                        <Typography variant="body2" color="inherit">
-                          {item.detail}
-                        </Typography>
-                      </Box>
-                    </ButtonBase>
-                  ))}
-                </Stack>
-              )}
-            </Card>
-            {stepsDone < steps.length && (
-              <Card sx={{ p: 2.75 }}>
+                <Chip
+                  size="small"
+                  label={`${stepsDone} of ${steps.length}`}
+                  sx={(theme) => ({
+                    bgcolor: theme.palette.studio.greenSoft,
+                    color: theme.palette.studio.greenInk,
+                  })}
+                />
+              </Box>
+              {steps.map((step) => (
                 <Box
+                  key={step.label}
                   sx={{
                     display: 'flex',
-                    justifyContent: 'space-between',
                     alignItems: 'center',
-                    mb: 1,
+                    gap: 1.25,
+                    minHeight: 40,
                   }}
                 >
-                  <Typography variant="h5" component="h2">
-                    Setup guide
-                  </Typography>
-                  <Chip
-                    size="small"
-                    label={`${stepsDone} of ${steps.length}`}
-                    sx={(theme) => ({
-                      bgcolor: theme.palette.studio.greenSoft,
-                      color: theme.palette.studio.greenInk,
-                    })}
-                  />
-                </Box>
-                {steps.map((step) => (
                   <Box
-                    key={step.label}
                     sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1.25,
-                      minHeight: 40,
+                      width: 24,
+                      height: 24,
+                      flex: 'none',
+                      display: 'grid',
+                      placeItems: 'center',
+                      borderRadius: '50%',
+                      bgcolor: step.done ? 'primary.main' : 'transparent',
+                      border: step.done ? 0 : 2,
+                      borderColor: 'divider',
+                      color: 'primary.contrastText',
                     }}
                   >
-                    <Box
-                      sx={{
-                        width: 24,
-                        height: 24,
-                        flex: 'none',
-                        display: 'grid',
-                        placeItems: 'center',
-                        borderRadius: '50%',
-                        bgcolor: step.done ? 'primary.main' : 'transparent',
-                        border: step.done ? 0 : 2,
-                        borderColor: 'divider',
-                        color: 'primary.contrastText',
-                      }}
-                    >
-                      {step.done && <CheckIcon sx={{ fontSize: 15 }} />}
-                    </Box>
-                    {step.done ? (
-                      <Typography sx={{ fontWeight: 600 }}>
-                        {step.label}
-                      </Typography>
-                    ) : (
-                      <Link component={RouterLink} to={step.to}>
-                        {step.label}
-                      </Link>
-                    )}
+                    {step.done && <CheckIcon sx={{ fontSize: 15 }} />}
                   </Box>
-                ))}
-              </Card>
-            )}
-          </Stack>
-        </Grid>
+                  {step.done ? (
+                    <Typography sx={{ fontWeight: 600 }}>
+                      {step.label}
+                    </Typography>
+                  ) : (
+                    <Link component={RouterLink} to={step.to}>
+                      {step.label}
+                    </Link>
+                  )}
+                </Box>
+              ))}
+            </Card>
+          </Grid>
+        )}
       </Grid>
     </Stack>
   );

@@ -9,6 +9,7 @@ import {
   Alert,
 } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import PasswordTextField from '../../common/Form/PasswordTextField';
 import { useDispatch, useSelector } from 'react-redux';
 import { routes } from '../../config/routes';
 import type { AppDispatch, RootState } from '../../redux/store';
@@ -67,7 +68,7 @@ export default function LoginForm() {
           value={values.email}
           onChange={(e) => setValues((s) => ({ ...s, email: e.target.value }))}
         />
-        <TextField
+        <PasswordTextField
           label="Password"
           type="password"
           autoComplete="current-password"

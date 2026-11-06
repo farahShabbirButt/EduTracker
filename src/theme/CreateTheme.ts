@@ -67,7 +67,7 @@ const createEducationTrackerTheme = (isDarkMode = false) => {
       border: { main: c.line, light: c.surfaceSoft, focus: c.primaryBright },
       hover: { main: c.tint, secondary: c.surfaceSoft },
       icon: { default: c.inkSoft, primary: c.primary, secondary: c.inkMuted },
-      DataGrid: { bg: c.surface, headerBg: c.surface, pinnedBg: c.surface },
+      DataGrid: { bg: c.surface, headerBg: c.surfaceSoft, pinnedBg: c.surface },
     },
 
     typography: {
@@ -95,6 +95,8 @@ const createEducationTrackerTheme = (isDarkMode = false) => {
             transition: `background-color ${motion.medium}, color ${motion.medium}`,
             scrollbarColor: `${c.scrollbar} transparent`,
           },
+          // Passwords have their own show button, so Edge's second one goes
+          'input::-ms-reveal': { display: 'none' },
           '@keyframes studio-rise': {
             from: { opacity: 0, transform: 'translateY(8px)' },
           },
@@ -174,8 +176,9 @@ const createEducationTrackerTheme = (isDarkMode = false) => {
         styleOverrides: {
           root: {
             borderRadius: radii.large,
-            boxShadow: shadow.small,
-            border: `1px solid ${c.line}`,
+            boxShadow: shadow.card,
+            border: `1px solid ${c.cardLine}`,
+            transition: `background-color ${motion.medium}, box-shadow ${motion.medium}`,
           },
         },
       },
@@ -277,7 +280,43 @@ const createEducationTrackerTheme = (isDarkMode = false) => {
       MuiTableCell: {
         styleOverrides: {
           root: { borderColor: c.line },
-          head: { color: c.inkMuted, fontWeight: 700 },
+          head: {
+            color: c.inkSoft,
+            fontWeight: 700,
+            fontSize: '0.8rem',
+            backgroundColor: c.surfaceSoft,
+            borderBottom: 0,
+            '&:first-of-type': {
+              borderTopLeftRadius: radii.small,
+              borderBottomLeftRadius: radii.small,
+            },
+            '&:last-of-type': {
+              borderTopRightRadius: radii.small,
+              borderBottomRightRadius: radii.small,
+            },
+          },
+        },
+      },
+
+      MuiTableRow: {
+        styleOverrides: {
+          root: {
+            transition: `background-color ${motion.medium}`,
+            '&:last-of-type td': { borderBottom: 0 },
+            'tbody &:hover': { backgroundColor: c.surfaceSoft },
+          },
+        },
+      },
+
+      MuiDialogTitle: {
+        styleOverrides: {
+          root: { fontWeight: 800, fontSize: '1.2rem', paddingTop: 24 },
+        },
+      },
+
+      MuiDialogActions: {
+        styleOverrides: {
+          root: { padding: '14px 24px', borderTop: `1px solid ${c.line}` },
         },
       },
 
@@ -290,9 +329,11 @@ const createEducationTrackerTheme = (isDarkMode = false) => {
               '--DataGrid-t-color-border-base': c.line,
             },
             '& .MuiDataGrid-columnHeaderTitle': {
-              color: c.inkMuted,
+              color: c.inkSoft,
               fontWeight: 700,
+              fontSize: '0.8rem',
             },
+            '& .MuiDataGrid-columnSeparator': { display: 'none' },
             '& .MuiDataGrid-row:hover': { backgroundColor: c.surfaceSoft },
           },
         },

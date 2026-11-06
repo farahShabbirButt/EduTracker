@@ -10,8 +10,12 @@ import {
   editClass,
   removeClass,
 } from '../../../redux/slices/classSlice';
+import { fetchDashboard } from '../../../redux/slices/dashboardSlice';
 import { fetchStudents } from '../../../redux/slices/studentSlice';
-import { fetchSubjects } from '../../../redux/slices/subjectSlice';
+import {
+  assignSubjectsToClass,
+  fetchSubjects,
+} from '../../../redux/slices/subjectSlice';
 import type { Class, ClassFormValues } from './@types/class.d';
 import AssignToClasses from '../Subjects/Partial/AssignToClasses';
 import ClassListing from './Partials/ClassListing';
@@ -76,20 +80,50 @@ export default function ClassesManagement() {
     setClassToDelete(null);
   };
 
-  const handleSave = async (values: ClassFormValues) => {
+  const handleSave = async (values: ClassFormValues, subjectIds: string[]) => {
     const result = editingClass
       ? await dispatch(
           editClass({ externalId: editingClass.externalId, data: values })
         )
       : await dispatch(addClass(values));
 
-    if (addClass.fulfilled.match(result) || editClass.fulfilled.match(result)) {
-      toast.success(result.payload.message);
-      setOpenDialog(false);
-    } else {
-      // Dialog stays open so the typed name isn't lost
+    if (
+      !addClass.fulfilled.match(result) &&
+      !editClass.fulfilled.match(result)
+    ) {
+      // Panel stays open so what was typed isn't lost
       toast.error((result.payload as string) || 'Failed to save class');
+      return;
     }
+
+    const assigned = subjects
+      .filter((s) =>
+        s.classes?.some((c) => c.externalId === editingClass?.externalId)
+      )
+      .map((s) => s.externalId);
+    const changed =
+      assigned.length !== subjectIds.length ||
+      assigned.some((id) => !subjectIds.includes(id));
+
+    if (changed && subjectIds.length > 0) {
+      const assignment = await dispatch(
+        assignSubjectsToClass({
+          classId: result.payload.class.externalId,
+          subjectIds,
+        })
+      );
+      if (assignSubjectsToClass.rejected.match(assignment)) {
+        toast.error(
+          'The class saved, but its subjects did not. Use Assign subjects to try again'
+        );
+        setOpenDialog(false);
+        return;
+      }
+      dispatch(fetchDashboard());
+    }
+
+    toast.success(result.payload.message);
+    setOpenDialog(false);
   };
 
   return (
@@ -168,6 +202,8 @@ export default function ClassesManagement() {
       <ClassDialog
         open={openDialog}
         initial={editingClass}
+        subjects={subjects}
+        subjectsLoading={subjectsLoading}
         onClose={() => setOpenDialog(false)}
         onSave={handleSave}
       />

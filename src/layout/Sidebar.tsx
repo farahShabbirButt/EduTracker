@@ -24,9 +24,7 @@ const Sidebar = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
-  const schoolName = useSelector(
-    (state: RootState) => state.institute.institute?.name
-  );
+  const school = useSelector((state: RootState) => state.institute.institute);
   const [collapsed, setCollapsed] = useState(
     () => readFromLocalStorage(COLLAPSED_KEY) === true
   );
@@ -262,13 +260,18 @@ const Sidebar = () => {
         })}
       >
         <Avatar
+          src={school?.logo ?? undefined}
+          alt=""
           sx={(theme) => ({
             width: 38,
             height: 38,
             fontSize: 13,
             fontWeight: 800,
-            bgcolor: theme.palette.studio.sidebarHover,
             color: 'inherit',
+            bgcolor: school?.logo
+              ? theme.palette.studio.paper
+              : theme.palette.studio.sidebarHover,
+            '& img': { objectFit: 'contain' },
           })}
         >
           {(user?.name ?? user?.email ?? 'A').charAt(0).toUpperCase()}
@@ -276,7 +279,7 @@ const Sidebar = () => {
         <Fade collapsed={collapsed}>
           <Box sx={{ minWidth: 0, width: 170 }}>
             <Typography noWrap sx={{ fontSize: 13, fontWeight: 700 }}>
-              {schoolName ?? 'Your school'}
+              {school?.name ?? 'Your school'}
             </Typography>
             <Typography noWrap sx={{ fontSize: 12, opacity: 0.8 }}>
               School admin

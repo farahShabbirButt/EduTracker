@@ -1,18 +1,11 @@
 import { useState } from 'react';
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Stack,
-  Link,
-  Alert,
-} from '@mui/material';
+import { Box, Button, Typography, Stack, Link, Alert } from '@mui/material';
 import {
   Link as RouterLink,
   useNavigate,
   useSearchParams,
 } from 'react-router-dom';
+import PasswordTextField from '../../common/Form/PasswordTextField';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
 import { routes } from '../../config/routes';
@@ -90,7 +83,7 @@ export default function ResetPasswordForm() {
 
         {error && <Alert severity="error">{error}</Alert>}
 
-        <TextField
+        <PasswordTextField
           label="New password"
           type="password"
           autoComplete="new-password"
@@ -101,7 +94,7 @@ export default function ResetPasswordForm() {
             setValues((s) => ({ ...s, password: e.target.value }))
           }
         />
-        <TextField
+        <PasswordTextField
           label="Confirm password"
           type="password"
           autoComplete="new-password"

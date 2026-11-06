@@ -18,6 +18,8 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import LoadError from '../../../common/LoadError';
 import EmptyState from '../../../common/EmptyState';
+import FilterBar from '../../../common/FilterBar';
+import LabeledSelect from '../../../common/Form/LabeledSelect';
 import type { GridColDef } from '@mui/x-data-grid';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -280,11 +282,7 @@ const StudentsManagement = () => {
 
   return (
     <Stack spacing={2}>
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={1.5}
-        alignItems={{ sm: 'center' }}
-      >
+      <FilterBar>
         <TextField
           size="small"
           placeholder="Search name, father, roll, phone or email"
@@ -294,7 +292,11 @@ const StudentsManagement = () => {
             setShown(PHONE_PAGE);
             if (picked) setSearchParams({});
           }}
-          fullWidth
+          sx={{
+            flex: 1,
+            minWidth: 220,
+            '& .MuiInputBase-root': { minHeight: 44 },
+          }}
           slotProps={{
             htmlInput: { 'aria-label': 'Search students' },
             input: {
@@ -306,17 +308,18 @@ const StudentsManagement = () => {
             },
           }}
         />
-        <TextField
-          select
-          size="small"
+        <LabeledSelect
           label="Class"
           value={classFilter}
-          onChange={(e) => {
-            setClassFilter(e.target.value);
+          options={{
+            All: 'All classes',
+            ...Object.fromEntries(classes.map((c) => [c.externalId, c.name])),
+          }}
+          onChange={(value) => {
+            setClassFilter(value);
             setShown(PHONE_PAGE);
             if (picked) setSearchParams({});
           }}
-          sx={{ width: { xs: '100%', sm: 200 }, flex: 'none' }}
         >
           <MenuItem value="All">All classes</MenuItem>
           {classes.map((c) => (
@@ -324,7 +327,7 @@ const StudentsManagement = () => {
               {c.name}
             </MenuItem>
           ))}
-        </TextField>
+        </LabeledSelect>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -333,7 +336,7 @@ const StudentsManagement = () => {
         >
           Add student
         </Button>
-      </Stack>
+      </FilterBar>
 
       {picked && (
         <Box>

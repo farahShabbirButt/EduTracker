@@ -6,6 +6,7 @@ export const lightColors = {
   surface: '#FFFFFF',
   surfaceSoft: '#F3F2FA',
   line: '#E6E4F4',
+  cardLine: 'rgba(30, 26, 99, 0.05)',
   ink: '#14142B',
   inkSoft: '#46465F',
   inkMuted: '#63637E',
@@ -57,6 +58,7 @@ export const darkColors: ColorTokens = {
   surface: '#1A1934',
   surfaceSoft: '#232242',
   line: '#2F2D55',
+  cardLine: 'rgba(255, 255, 255, 0.06)',
   ink: '#F3F2FC',
   inkSoft: '#C4C3DC',
   inkMuted: '#A09FBD',
@@ -130,6 +132,7 @@ export const motion = {
 
 export const shadows = (rgb: string) => ({
   small: `0 1px 2px rgba(${rgb}, .05)`,
+  card: `0 1px 2px rgba(${rgb}, .04), 0 12px 32px -20px rgba(${rgb}, .22)`,
   medium: `0 10px 28px -14px rgba(${rgb}, .24)`,
   large: `0 28px 70px -24px rgba(${rgb}, .42)`,
 });

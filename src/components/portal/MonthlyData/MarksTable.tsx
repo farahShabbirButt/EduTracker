@@ -92,7 +92,9 @@ const MarksTable = ({
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell sx={stickyCell}>Student</TableCell>
+            <TableCell sx={{ ...stickyCell, bgcolor: 'background.secondary' }}>
+              Student
+            </TableCell>
             {grid.subjects.map((subject) => (
               <TableCell
                 key={subject.externalId}

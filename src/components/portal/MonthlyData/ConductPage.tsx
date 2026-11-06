@@ -21,6 +21,7 @@ import {
   useTheme,
 } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
+import StarBorderOutlinedIcon from '@mui/icons-material/StarBorderOutlined';
 import { toast } from 'react-toastify';
 import type { AppDispatch, RootState } from '../../../redux/store';
 import { fetchClasses } from '../../../redux/slices/classSlice';
@@ -32,6 +33,8 @@ import {
 } from '../../../redux/slices/conductSlice';
 import { MonthList } from '../../../config/constants';
 import EmptyState from '../../../common/EmptyState';
+import FilterBar from '../../../common/FilterBar';
+import LabeledSelect from '../../../common/Form/LabeledSelect';
 import { useNavigationGuard } from '../../../layout/NavigationGuard';
 import { CONDUCT_RATING_OPTIONS, ConductRating } from './@types/conduct.d';
 
@@ -85,6 +88,11 @@ export default function ConductPage() {
   useEffect(() => {
     if (linkedClass) setClassId(linkedClass);
   }, [linkedClass]);
+
+  // Opens on a class, so there's something to rate straight away
+  useEffect(() => {
+    if (!classId && classes.length > 0) setClassId(classes[0].externalId);
+  }, [classId, classes]);
 
   useEffect(() => {
     dispatch(clearClassConduct());
@@ -220,62 +228,50 @@ export default function ConductPage() {
 
   return (
     <Stack spacing={2}>
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={1.5}
-        alignItems={{ sm: 'flex-end' }}
-      >
-        <TextField
-          select
+      <FilterBar>
+        <LabeledSelect
           label="Class"
+          placeholder="Choose a class"
           value={classId}
           disabled={saving}
-          onChange={(e) => {
-            const next = e.target.value;
-            select(() => setClassId(next));
-          }}
-          sx={{ minWidth: 180 }}
+          options={Object.fromEntries(
+            classes.map((c) => [c.externalId, c.name])
+          )}
+          onChange={(value) => select(() => setClassId(value))}
         >
           {classes.map((c) => (
             <MenuItem key={c.externalId} value={c.externalId}>
               {c.name}
             </MenuItem>
           ))}
-        </TextField>
-        <TextField
-          select
+        </LabeledSelect>
+        <LabeledSelect
           label="Month"
           value={month}
           disabled={saving}
-          onChange={(e) => {
-            const next = Number(e.target.value);
-            select(() => setMonth(next));
-          }}
-          sx={{ minWidth: 150 }}
+          minWidth={150}
+          options={Object.fromEntries(MonthList.map((m) => [m.value, m.label]))}
+          onChange={(value) => select(() => setMonth(Number(value)))}
         >
           {MonthList.map((m) => (
             <MenuItem key={m.value} value={m.value}>
               {m.label}
             </MenuItem>
           ))}
-        </TextField>
-        <TextField
-          select
+        </LabeledSelect>
+        <LabeledSelect
           label="Year"
           value={year}
           disabled={saving}
-          onChange={(e) => {
-            const next = Number(e.target.value);
-            select(() => setYear(next));
-          }}
-          sx={{ minWidth: 110 }}
+          minWidth={110}
+          onChange={(value) => select(() => setYear(Number(value)))}
         >
           {years.map((y) => (
             <MenuItem key={y} value={y}>
               {y}
             </MenuItem>
           ))}
-        </TextField>
+        </LabeledSelect>
         <Box sx={{ flex: 1 }} />
         <Button
           variant="outlined"
@@ -291,7 +287,7 @@ export default function ConductPage() {
         >
           {saving ? 'Saving' : 'Save conduct'}
         </Button>
-      </Stack>
+      </FilterBar>
 
       {half && (
         <Alert severity="warning">
@@ -387,6 +383,7 @@ export default function ConductPage() {
         ) : (
           !loading && (
             <EmptyState
+              icon={<StarBorderOutlinedIcon />}
               title={
                 !classId
                   ? 'Choose a class'

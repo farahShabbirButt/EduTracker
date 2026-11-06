@@ -25,7 +25,7 @@ export default function FormPanel({
           'aria-label': label,
           'aria-modal': true,
           sx: {
-            width: { xs: '100%', md: 480 },
+            width: { xs: '100%', md: 500 },
             maxWidth: '100%',
             maxHeight: { xs: '92dvh', md: '100%' },
             borderRadius: {

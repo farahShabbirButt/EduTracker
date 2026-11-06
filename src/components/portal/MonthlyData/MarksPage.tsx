@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Alert,
   Box,
@@ -10,9 +10,9 @@ import {
   CircularProgress,
   MenuItem,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
+import GridOnOutlinedIcon from '@mui/icons-material/GridOnOutlined';
 import { toast } from 'react-toastify';
 import type { AppDispatch, RootState } from '../../../redux/store';
 import { fetchClasses } from '../../../redux/slices/classSlice';
@@ -29,7 +29,11 @@ import {
   readFromLocalStorage,
   writeToLocalStorage,
 } from '../../../utils/localStorageMethods';
+import { routes } from '../../../config/routes';
 import EmptyState from '../../../common/EmptyState';
+import LoadError from '../../../common/LoadError';
+import FilterBar from '../../../common/FilterBar';
+import LabeledSelect from '../../../common/Form/LabeledSelect';
 import ProgressBar from '../../../common/ProgressBar';
 import { percentOf } from '../../../common/percent';
 import { useNavigationGuard } from '../../../layout/NavigationGuard';
@@ -60,13 +64,18 @@ const clearDraft = (testId: string) => {
 
 export default function MarksPage() {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const { setDirty, confirmLeaving } = useNavigationGuard();
   const [searchParams, setSearchParams] = useSearchParams();
   const classId = searchParams.get('class') ?? '';
   const testId = searchParams.get('test') ?? '';
 
   const classes = useSelector((state: RootState) => state.classes.classes);
-  const allTests = useSelector((state: RootState) => state.tests.tests);
+  const {
+    tests: allTests,
+    loading: testsLoading,
+    loadError: testsError,
+  } = useSelector((state: RootState) => state.tests);
   const { grid, loading, saving, error } = useSelector(
     (state: RootState) => state.scores
   );
@@ -94,6 +103,18 @@ export default function MarksPage() {
     dispatch(fetchClasses());
     dispatch(fetchTests());
   }, [dispatch]);
+
+  // Opens on the newest test, the one most likely to need marks
+  const newest = allTests.find((t) => t.testType === 'MONTHLY');
+  useEffect(() => {
+    if (!classId && newest?.class) {
+      setSearchParams(
+        { class: newest.class.externalId, test: newest.externalId },
+        { replace: true }
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classId, newest]);
 
   const fetching = useRef<{ abort: () => void } | null>(null);
 
@@ -254,44 +275,50 @@ export default function MarksPage() {
     setCells({ grid, typed: saved });
   };
 
-  const monthLabel = (month: number) =>
-    MonthList.find((m) => m.value === month)?.label ?? month;
+  const classNames = Object.fromEntries(
+    classes.map((c) => [c.externalId, c.name])
+  );
+  const testNames = Object.fromEntries(
+    tests.map((t) => [
+      t.externalId,
+      `${t.name}, ${MonthList.find((m) => m.value === t.month)?.label ?? t.month} ${t.year}`,
+    ])
+  );
 
   return (
     <Stack spacing={2}>
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={1.5}
-        alignItems={{ sm: 'flex-end' }}
-      >
-        <TextField
-          select
+      <FilterBar>
+        <LabeledSelect
           label="Class"
+          placeholder="Choose a class"
           value={classId}
           disabled={saving}
-          onChange={(e) => select(e.target.value, '')}
-          sx={{ minWidth: 180 }}
+          options={classNames}
+          onChange={(value) => select(value, '')}
         >
           {classes.map((c) => (
             <MenuItem key={c.externalId} value={c.externalId}>
               {c.name}
             </MenuItem>
           ))}
-        </TextField>
-        <TextField
-          select
+        </LabeledSelect>
+        <LabeledSelect
           label="Test"
+          placeholder={
+            tests.length || testsLoading ? 'Choose a test' : 'No tests yet'
+          }
           value={tests.some((t) => t.externalId === testId) ? testId : ''}
-          disabled={!classId || saving}
-          onChange={(e) => select(classId, e.target.value)}
-          sx={{ minWidth: 260 }}
+          disabled={!classId || saving || tests.length === 0}
+          minWidth={240}
+          options={testNames}
+          onChange={(value) => select(classId, value)}
         >
           {tests.map((t) => (
             <MenuItem key={t.externalId} value={t.externalId}>
-              {`${t.name}, ${monthLabel(t.month)} ${t.year}`}
+              {testNames[t.externalId]}
             </MenuItem>
           ))}
-        </TextField>
+        </LabeledSelect>
         <Box sx={{ flex: 1 }} />
         <Button
           variant="contained"
@@ -303,7 +330,7 @@ export default function MarksPage() {
         >
           {saving ? 'Saving' : justSaved ? 'Saved' : 'Save marks'}
         </Button>
-      </Stack>
+      </FilterBar>
 
       {restored && (
         <Alert
@@ -411,11 +438,35 @@ export default function MarksPage() {
         </>
       )}
 
-      {!grid && !loading && !error && (
+      {testsError && (
+        <LoadError
+          message={testsError}
+          onRetry={() => dispatch(fetchTests())}
+        />
+      )}
+
+      {!grid && !loading && !error && !testsLoading && !testsError && (
         <Card>
           <EmptyState
-            title={classId ? 'Choose a test' : 'Choose a class and test'}
-            detail="The whole class appears here, with every subject on the test."
+            icon={<GridOnOutlinedIcon />}
+            title={
+              allTests.length === 0
+                ? 'No tests yet'
+                : tests.length === 0
+                  ? 'This class has no monthly tests yet'
+                  : 'Choose a test'
+            }
+            detail="Add a test, then enter the whole class here, with every subject on one screen."
+            action={
+              tests.length === 0 ? (
+                <Button
+                  variant="contained"
+                  onClick={() => navigate(routes.portal.tests)}
+                >
+                  Add a test
+                </Button>
+              ) : undefined
+            }
           />
         </Card>
       )}

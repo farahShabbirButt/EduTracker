@@ -13,7 +13,6 @@ import {
   MenuItem,
   Skeleton,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import PrintOutlinedIcon from '@mui/icons-material/PrintOutlined';
@@ -30,6 +29,7 @@ import {
 } from '../../../redux/slices/reportSlice';
 import { MonthList } from '../../../config/constants';
 import EmptyState from '../../../common/EmptyState';
+import LabeledSelect from '../../../common/Form/LabeledSelect';
 import LoadError from '../../../common/LoadError';
 import ReportPreviewModal from './Partials/ReportPreviewModal';
 import { ResultCard } from './ResultCard';
@@ -196,35 +196,36 @@ const ReportsManagement = () => {
   };
 
   const yearField = (label: string, field: 'fromYear' | 'toYear') => (
-    <TextField
-      select
-      fullWidth
+    <LabeledSelect
       label={label}
       value={period[field]}
-      onChange={(e) => setPeriodField(field, Number(e.target.value))}
+      minWidth={0}
+      fill
+      onChange={(value) => setPeriodField(field, Number(value))}
     >
       {yearOptions().map((y) => (
         <MenuItem key={y} value={y}>
           {y}
         </MenuItem>
       ))}
-    </TextField>
+    </LabeledSelect>
   );
 
   const monthField = (label: string, field: 'fromMonth' | 'toMonth') => (
-    <TextField
-      select
-      fullWidth
+    <LabeledSelect
       label={label}
       value={period[field]}
-      onChange={(e) => setPeriodField(field, Number(e.target.value))}
+      minWidth={0}
+      fill
+      options={Object.fromEntries(MonthList.map((m) => [m.value, m.label]))}
+      onChange={(value) => setPeriodField(field, Number(value))}
     >
       {MonthList.map((m) => (
         <MenuItem key={m.value} value={m.value}>
           {m.label}
         </MenuItem>
       ))}
-    </TextField>
+    </LabeledSelect>
   );
 
   return (
@@ -248,19 +249,22 @@ const ReportsManagement = () => {
                 The To month can't be before the From month.
               </Alert>
             )}
-            <TextField
-              select
-              fullWidth
+            <LabeledSelect
               label="Class"
+              fill
+              placeholder="Choose a class"
               value={classId}
-              onChange={(e) => pickClass(e.target.value)}
+              options={Object.fromEntries(
+                classes.map((c) => [c.externalId, c.name])
+              )}
+              onChange={pickClass}
             >
               {classes.map((c) => (
                 <MenuItem key={c.externalId} value={c.externalId}>
                   {c.name}
                 </MenuItem>
               ))}
-            </TextField>
+            </LabeledSelect>
             {classId && (
               <Box>
                 <Box

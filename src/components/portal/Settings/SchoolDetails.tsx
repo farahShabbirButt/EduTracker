@@ -249,28 +249,31 @@ const SchoolDetails = () => {
           <CardContent>
             <Box
               sx={(theme) => ({
-                display: 'grid',
-                gridTemplateColumns: '64px 1fr 64px',
+                display: 'flex',
+                justifyContent: 'center',
                 alignItems: 'center',
-                gap: 1,
+                gap: 1.5,
                 p: 2,
-                textAlign: 'center',
+                textAlign: logo ? 'left' : 'center',
                 bgcolor: cardColors.paper,
                 color: cardColors.ink,
                 borderRadius: `${theme.studio.radii.medium}px`,
                 boxShadow: theme.studio.shadows.medium,
               })}
             >
-              <Box>
-                {logo && (
-                  <Box
-                    component="img"
-                    src={logo}
-                    alt=""
-                    sx={{ maxWidth: 60, maxHeight: 44, objectFit: 'contain' }}
-                  />
-                )}
-              </Box>
+              {logo && (
+                <Box
+                  component="img"
+                  src={logo}
+                  alt=""
+                  sx={{
+                    flex: 'none',
+                    maxWidth: 60,
+                    maxHeight: 44,
+                    objectFit: 'contain',
+                  }}
+                />
+              )}
               <Box sx={{ minWidth: 0 }}>
                 <Typography
                   sx={(theme) => ({
