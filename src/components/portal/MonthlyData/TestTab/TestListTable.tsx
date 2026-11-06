@@ -1,26 +1,26 @@
 import { useEffect, useState } from 'react';
 import {
+  Box,
+  IconButton,
   Table,
+  TableContainer,
   TableHead,
   TableBody,
   TableRow,
   TableCell,
   Tooltip,
-  MenuItem,
   Typography,
 } from '@mui/material';
-
-import {
-  MoreVert as MenuIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-} from '@mui/icons-material';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import type { AppDispatch, RootState } from '../../../../redux/store';
 import { fetchTests, removeTest } from '../../../../redux/slices/testSlice';
 import { MonthList } from '../../../../config/constants';
-import DropdownMenu from '../../../../common/DropdownMenu/DropdownMenu';
+import EmptyState from '../../../../common/EmptyState';
+import { percentOf } from '../../../../common/percent';
+import ProgressBar from '../../../../common/ProgressBar';
 import DeleteDialog from '../../../../common/Dialogs/DeleteDialog/DeleteDialog';
 import LoadError from '../../../../common/LoadError';
 import type { ApiTest } from '../@types/testData.d';
@@ -56,65 +56,88 @@ export default function TestListTable({
 
   return (
     <>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Test Name</TableCell>
-            <TableCell>Class</TableCell>
-            <TableCell>Month</TableCell>
-            <TableCell>Year</TableCell>
-            <TableCell>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-
-        <TableBody>
-          {tests.map((t) => (
-            <TableRow key={t.externalId}>
-              <TableCell>{t.name}</TableCell>
-              <TableCell>{t.class?.name}</TableCell>
-              <TableCell>{monthLabel(t.month)}</TableCell>
-              <TableCell>{t.year}</TableCell>
-              <TableCell>
-                <DropdownMenu icon={<MenuIcon fontSize="small" />}>
-                  <Tooltip title="Edit">
-                    <MenuItem onClick={() => onEditTest(t.externalId)}>
-                      <EditIcon fontSize="small" sx={{ mr: 1 }} />
-                      Edit
-                    </MenuItem>
-                  </Tooltip>
-                  <Tooltip title="Delete">
-                    <MenuItem onClick={() => setDeleteTarget(t)}>
-                      <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-                      Delete
-                    </MenuItem>
-                  </Tooltip>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
-
-          {loadError && (
+      <TableContainer>
+        <Table>
+          <TableHead>
             <TableRow>
-              <TableCell colSpan={5}>
-                <LoadError
-                  message={loadError}
-                  onRetry={() => dispatch(fetchTests())}
-                />
-              </TableCell>
+              <TableCell>Test</TableCell>
+              <TableCell>Class</TableCell>
+              <TableCell>Month</TableCell>
+              <TableCell sx={{ minWidth: 190 }}>Marks entered</TableCell>
+              <TableCell align="right">Actions</TableCell>
             </TableRow>
-          )}
+          </TableHead>
 
-          {!loading && !loadError && tests.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={5}>
-                <Typography variant="body2" color="text.secondary">
-                  No tests yet.
-                </Typography>
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          <TableBody>
+            {tests.map((t) => {
+              const percent = percentOf(t.marksEntered, t.marksExpected);
+              return (
+                <TableRow key={t.externalId}>
+                  <TableCell sx={{ fontWeight: 700 }}>{t.name}</TableCell>
+                  <TableCell>{t.class?.name}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                    {monthLabel(t.month)} {t.year}
+                  </TableCell>
+                  <TableCell>
+                    <Box
+                      sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}
+                    >
+                      <Box sx={{ flex: 1 }}>
+                        <ProgressBar
+                          value={percent}
+                          label={`Marks entered for ${t.name}`}
+                        />
+                      </Box>
+                      <Typography variant="body2">{percent}%</Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                    <Tooltip title="Edit">
+                      <IconButton
+                        aria-label={`Edit ${t.name}`}
+                        onClick={() => onEditTest(t.externalId)}
+                      >
+                        <EditOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete">
+                      <IconButton
+                        color="error"
+                        aria-label={`Delete ${t.name}`}
+                        onClick={() => setDeleteTarget(t)}
+                      >
+                        <DeleteOutlineOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+
+            {loadError && (
+              <TableRow>
+                <TableCell colSpan={5}>
+                  <LoadError
+                    message={loadError}
+                    onRetry={() => dispatch(fetchTests())}
+                  />
+                </TableCell>
+              </TableRow>
+            )}
+
+            {!loading && !loadError && tests.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5}>
+                  <EmptyState
+                    title="No tests yet"
+                    detail="Add this month's test to start entering marks."
+                  />
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
       <DeleteDialog
         open={!!deleteTarget}

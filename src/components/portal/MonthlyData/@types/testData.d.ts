@@ -19,6 +19,8 @@ export type ApiTest = {
   createdAt: string;
   updatedAt: string;
   class: ApiTestClassRef;
+  marksEntered: number;
+  marksExpected: number;
 };
 
 // Real `GET /test/:externalId/subjects` row shape.

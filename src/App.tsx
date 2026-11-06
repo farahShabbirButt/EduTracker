@@ -15,7 +15,8 @@ import StudentsManagement from './components/portal/Students/StudentsManagement'
 import SubjectsManagement from './components/portal/Subjects/SubjectsManagement';
 import MarksPage from './components/portal/MonthlyData/MarksPage';
 import TestsPage from './components/portal/MonthlyData/TestsPage';
-import ConductEntry from './components/portal/MonthlyData/ConductEntry';
+import ConductPage from './components/portal/MonthlyData/ConductPage';
+import DashboardPage from './components/portal/Dashboard/DashboardPage';
 import ProfilePage from './components/portal/Profile/ProfilePage';
 import ReportsManagement from './components/portal/Reports/ReportsManagement';
 import SchoolDetails from './components/portal/Settings/SchoolDetails';
@@ -88,10 +89,7 @@ function App() {
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route element={<PortalLayout />}>
-            <Route
-              path={routes.portal.dashboard}
-              element={<div>Dashboard</div>}
-            />
+            <Route path={routes.portal.dashboard} element={<DashboardPage />} />
             <Route
               path={routes.portal.student}
               element={<StudentsManagement />}
@@ -106,7 +104,7 @@ function App() {
             />
             <Route path={routes.portal.marks} element={<MarksPage />} />
             <Route path={routes.portal.tests} element={<TestsPage />} />
-            <Route path={routes.portal.conduct} element={<ConductEntry />} />
+            <Route path={routes.portal.conduct} element={<ConductPage />} />
             <Route path={routes.portal.profile} element={<ProfilePage />} />
             <Route
               path={routes.portal.reports}

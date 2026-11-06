@@ -11,7 +11,8 @@ import { useBlocker, type BlockerFunction } from 'react-router-dom';
 import DeleteDialog from '../common/Dialogs/DeleteDialog/DeleteDialog';
 
 interface NavigationGuardValue {
-  setDirty: (dirty: boolean) => void;
+  // onDiscard runs if the person chooses to throw the work away
+  setDirty: (dirty: boolean, onDiscard?: () => void) => void;
   confirmLeaving: (go: () => void) => void;
 }
 
@@ -23,18 +24,22 @@ const NavigationGuardContext = createContext<NavigationGuardValue | null>(null);
 // signing out, asks through confirmLeaving().
 export function NavigationGuardProvider({ children }: { children: ReactNode }) {
   const dirty = useRef(false);
+  const onDiscard = useRef<(() => void) | undefined>(undefined);
   const [pending, setPending] = useState<(() => void) | null>(null);
 
   const blocker = useBlocker(
     useCallback<BlockerFunction>(
       ({ currentLocation, nextLocation }) =>
-        dirty.current && currentLocation.pathname !== nextLocation.pathname,
+        dirty.current &&
+        currentLocation.pathname + currentLocation.search !==
+          nextLocation.pathname + nextLocation.search,
       []
     )
   );
 
-  const setDirty = useCallback((value: boolean) => {
+  const setDirty = useCallback((value: boolean, discard?: () => void) => {
     dirty.current = value;
+    onDiscard.current = discard;
   }, []);
 
   const confirmLeaving = useCallback((go: () => void) => {
@@ -54,6 +59,7 @@ export function NavigationGuardProvider({ children }: { children: ReactNode }) {
 
   const discard = () => {
     dirty.current = false;
+    onDiscard.current?.();
     if (blocker.state === 'blocked') blocker.proceed();
     pending?.();
     setPending(null);
@@ -64,8 +70,8 @@ export function NavigationGuardProvider({ children }: { children: ReactNode }) {
       {children}
       <DeleteDialog
         open={blocker.state === 'blocked' || pending !== null}
-        title="Discard unsaved marks?"
-        subtitle="The marks typed here haven't been saved."
+        title="Discard unsaved changes?"
+        subtitle="What you typed here hasn't been saved."
         confirmLabel="Discard"
         onCancel={stay}
         onConfirm={discard}

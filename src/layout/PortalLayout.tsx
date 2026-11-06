@@ -4,6 +4,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Box } from '@mui/material';
 import type { AppDispatch } from '../redux/store';
 import { fetchInstitute } from '../redux/slices/instituteSlice';
+import { fetchDashboard } from '../redux/slices/dashboardSlice';
 import BottomTabs from './BottomTabs';
 import { NavigationGuardProvider } from './NavigationGuard';
 import Sidebar from './Sidebar';
@@ -19,7 +20,9 @@ const PortalLayout = () => {
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
-  }, [pathname]);
+    // Keeps the header's Needs attention list current
+    dispatch(fetchDashboard());
+  }, [pathname, dispatch]);
 
   return (
     <NavigationGuardProvider>

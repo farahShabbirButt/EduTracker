@@ -5,16 +5,22 @@ import {
   Autocomplete,
   createFilterOptions,
   Avatar,
+  Badge,
   Box,
   IconButton,
+  List,
+  ListItemButton,
   ListItemIcon,
+  ListItemText,
   Menu,
   MenuItem,
+  Popover,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
@@ -26,8 +32,12 @@ import type { AppDispatch, RootState } from '../redux/store';
 import { logout } from '../redux/slices/authSlice';
 import { fetchStudents } from '../redux/slices/studentSlice';
 import type { Student } from '../components/portal/Students/@types/student.d';
+import type { AttentionItem } from '../redux/slices/dashboardSlice';
+import { attentionPath } from './attention';
 import { navItemFor } from './navigation';
 import { useNavigationGuard } from './NavigationGuard';
+
+const NO_ITEMS: AttentionItem[] = [];
 
 const firstMatches = createFilterOptions<Student>({ limit: 8 });
 
@@ -40,12 +50,22 @@ const Topbar = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const students = useSelector((state: RootState) => state.students.students);
 
+  const attention = useSelector(
+    (state: RootState) => state.dashboard.dashboard?.attention ?? NO_ITEMS
+  );
+  const attentionError = useSelector(
+    (state: RootState) => state.dashboard.loadError
+  );
   const [accountAnchor, setAccountAnchor] = useState<HTMLElement | null>(null);
+  const [attentionAnchor, setAttentionAnchor] = useState<HTMLElement | null>(
+    null
+  );
 
   const current = navItemFor(pathname);
 
   const go = (to: string) => {
     setAccountAnchor(null);
+    setAttentionAnchor(null);
     navigate(to);
   };
 
@@ -130,6 +150,50 @@ const Topbar = () => {
           />
         )}
       />
+
+      <Tooltip title="Needs attention">
+        <IconButton
+          aria-label="Needs attention"
+          onClick={(e) => setAttentionAnchor(e.currentTarget)}
+        >
+          <Badge
+            color="warning"
+            badgeContent={attention.length}
+            overlap="circular"
+          >
+            <WarningAmberOutlinedIcon />
+          </Badge>
+        </IconButton>
+      </Tooltip>
+      <Popover
+        open={Boolean(attentionAnchor)}
+        anchorEl={attentionAnchor}
+        onClose={() => setAttentionAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{ paper: { sx: { width: 320, p: 1, mt: 1 } } }}
+      >
+        <Typography variant="h6" component="h2" sx={{ p: 1 }}>
+          Needs attention
+        </Typography>
+        {attention.length === 0 ? (
+          <Typography variant="body2" sx={{ px: 1, pb: 1 }}>
+            {attentionError ?? 'Nothing needs your attention.'}
+          </Typography>
+        ) : (
+          <List dense disablePadding>
+            {attention.map((item, index) => (
+              <ListItemButton
+                key={index}
+                onClick={() => go(attentionPath(item))}
+                sx={{ borderRadius: 1 }}
+              >
+                <ListItemText primary={item.title} secondary={item.detail} />
+              </ListItemButton>
+            ))}
+          </List>
+        )}
+      </Popover>
 
       <Tooltip title={isDark ? 'Use light theme' : 'Use dark theme'}>
         <IconButton

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Box, Button, Modal, Paper } from '@mui/material';
+import { Box, Button, Card, Modal } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import TestListTable from './TestTab/TestListTable';
 import TestModal from './TestTab/TestModal';
 
@@ -19,15 +20,18 @@ export default function TestsPage() {
 
   return (
     <>
-      <Paper sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'end' }}>
-          <Button variant="contained" onClick={handleAddTest} sx={{ mb: 2 }}>
-            Add Test
-          </Button>
-        </Box>
-
+      <Box sx={{ display: 'flex', justifyContent: 'end', mb: 2 }}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleAddTest}
+        >
+          New test
+        </Button>
+      </Box>
+      <Card sx={{ p: 1.5 }}>
         <TestListTable onEditTest={handleEditTest} />
-      </Paper>
+      </Card>
 
       <Modal open={openCreateModal} onClose={() => setOpenCreateModal(false)}>
         <Box

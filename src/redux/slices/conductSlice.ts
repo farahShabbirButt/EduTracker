@@ -5,13 +5,33 @@ import {
   type ApiResponse,
 } from '../../services/apiClient';
 import { CONDUCT_ROUTES } from '../../services/apiRoutes';
-import type {
-  ApiConduct,
-  ConductFormValues,
-} from '../../components/portal/MonthlyData/@types/conduct.d';
+import type { ConductRating } from '../../components/portal/MonthlyData/@types/conduct.d';
+
+export type ConductRow = {
+  externalId: string;
+  firstName: string;
+  lastName: string | null;
+  rollNumber: string;
+  behaviour: ConductRating | null;
+  uniformCleanliness: ConductRating | null;
+};
+
+export type ClassConductQuery = {
+  classExternalId: string;
+  month: number;
+  year: number;
+};
+
+export type SaveClassConductPayload = ClassConductQuery & {
+  entries: {
+    studentExternalId: string;
+    behaviour: ConductRating;
+    uniformCleanliness: ConductRating;
+  }[];
+};
 
 interface ConductState {
-  conduct: ApiConduct | null;
+  rows: ConductRow[] | null;
   loading: boolean;
   // Latest fetch only: an aborted or superseded one must not touch the state
   requestId: string | null;
@@ -20,63 +40,42 @@ interface ConductState {
 }
 
 const initialState: ConductState = {
-  conduct: null,
+  rows: null,
   loading: false,
   requestId: null,
   saving: false,
   error: null,
 };
 
-export type FetchConductParams = {
-  studentExternalId: string;
-  month: number;
-  year: number;
-};
-
-export const fetchConduct = createAsyncThunk(
-  'conduct/fetch',
-  async (params: FetchConductParams, { signal, rejectWithValue }) => {
+export const fetchClassConduct = createAsyncThunk(
+  'conduct/fetchClass',
+  async (params: ClassConductQuery, { signal, rejectWithValue }) => {
     try {
       const query = new URLSearchParams({
         month: String(params.month),
         year: String(params.year),
       }).toString();
       const response = await apiClient.get<
-        ApiResponse<'conduct', ApiConduct | null>
-      >(CONDUCT_ROUTES.GET_CONDUCT(params.studentExternalId, query), {
-        signal,
-      });
-      // A student with nothing recorded yet returns `null` under `keyName`
-      // with HTTP 200 — that's the normal "not set" state, not an error.
-      return response[response.keyName];
+        ApiResponse<'classConduct', { students: ConductRow[] }>
+      >(CONDUCT_ROUTES.CLASS(params.classExternalId, query), { signal });
+      return response[response.keyName].students;
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to load conduct'));
     }
   }
 );
 
-export type SaveConductParams = {
-  studentExternalId: string;
-} & ConductFormValues;
-
-export const saveConduct = createAsyncThunk(
-  'conduct/save',
+export const saveClassConduct = createAsyncThunk(
+  'conduct/saveClass',
   async (
-    { studentExternalId, ...data }: SaveConductParams,
+    { classExternalId, ...data }: SaveClassConductPayload,
     { rejectWithValue }
   ) => {
     try {
-      const response = await apiClient.put<ApiResponse<'conduct', ApiConduct>>(
-        CONDUCT_ROUTES.SAVE_CONDUCT(studentExternalId),
-        data
-      );
-      return {
-        conduct: response[response.keyName],
-        message:
-          response.userMessage ||
-          response.message ||
-          'Conduct saved successfully',
-      };
+      const response = await apiClient.put<
+        ApiResponse<'classConduct', { saved: number }>
+      >(CONDUCT_ROUTES.SAVE_CLASS(classExternalId), data);
+      return response.userMessage || response.message || 'Conduct saved';
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to save conduct'));
     }
@@ -87,48 +86,42 @@ const conductSlice = createSlice({
   name: 'conduct',
   initialState,
   reducers: {
-    // Clears the loaded record (and its error) when the student/month/year
-    // selection changes, so a stale record never lingers under a new selection.
-    clearConduct: (state) => {
-      state.conduct = null;
+    // A stale list must never linger under a new selection
+    clearClassConduct: (state) => {
+      state.rows = null;
       state.error = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchConduct.pending, (state, action) => {
+      .addCase(fetchClassConduct.pending, (state, action) => {
         state.loading = true;
         state.requestId = action.meta.requestId;
         state.error = null;
       })
-      .addCase(fetchConduct.fulfilled, (state, action) => {
+      .addCase(fetchClassConduct.fulfilled, (state, action) => {
         if (state.requestId !== action.meta.requestId) return;
         state.loading = false;
-        state.conduct = action.payload;
+        state.rows = action.payload;
       })
-      .addCase(fetchConduct.rejected, (state, action) => {
+      .addCase(fetchClassConduct.rejected, (state, action) => {
         if (state.requestId !== action.meta.requestId) return;
         state.loading = false;
-        // An aborted request (superseded by a newer selection) isn't a real
-        // failure — don't flash an error banner for it.
         if (action.meta.aborted) return;
-        state.conduct = null;
+        state.rows = null;
         state.error = (action.payload as string) || 'Failed to load conduct';
       })
-      .addCase(saveConduct.pending, (state) => {
+      .addCase(saveClassConduct.pending, (state) => {
         state.saving = true;
-        state.error = null;
       })
-      .addCase(saveConduct.fulfilled, (state, action) => {
+      .addCase(saveClassConduct.fulfilled, (state) => {
         state.saving = false;
-        state.conduct = action.payload.conduct;
       })
-      .addCase(saveConduct.rejected, (state, action) => {
+      .addCase(saveClassConduct.rejected, (state) => {
         state.saving = false;
-        state.error = (action.payload as string) || 'Failed to save conduct';
       });
   },
 });
 
-export const { clearConduct } = conductSlice.actions;
+export const { clearClassConduct } = conductSlice.actions;
 export default conductSlice.reducer;
