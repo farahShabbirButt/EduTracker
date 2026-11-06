@@ -1,9 +1,9 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import {
-  apiClient,
-  messageFrom,
-  type ApiResponse,
-} from '../../services/apiClient';
+  createSlice,
+  createAsyncThunk,
+  type PayloadAction,
+} from '@reduxjs/toolkit';
+import { apiClient, type ApiResponse } from '../../services/apiClient';
 import { REPORT_ROUTES } from '../../services/apiRoutes';
 import type {
   IReportCard,
@@ -11,31 +11,21 @@ import type {
 } from '../../components/portal/Reports/@types/reportCard.d';
 
 interface ReportState {
-  report: IReportCard | null;
-  loading: boolean;
-  // Latest fetch only: an aborted or superseded one must not touch the state
-  requestId: string | null;
-  error: string | null;
+  // By student, for the period last loaded
+  cards: Record<string, IReportCard>;
+  // Couldn't be loaded. Kept apart so they're retried on request, not forever.
+  failed: string[];
 }
 
 const initialState: ReportState = {
-  report: null,
-  loading: false,
-  requestId: null,
-  error: null,
+  cards: {},
+  failed: [],
 };
 
-// SESSION mode is deliberately out of scope for this slice — the backend
-// rejects it with a 400, and the UI never offers it as a selectable option.
-export type FetchReportParams = {
-  studentExternalId: string;
-  period: IReportPeriod;
-};
-
-// A period with no data is a normal 200 (rows: [], position: null), not an
-// error. The preview says so.
-const requestReport = async (
-  { studentExternalId, period }: FetchReportParams,
+// A period with no data is a normal 200 (rows: [], position: null), not an error.
+const requestCard = async (
+  studentExternalId: string,
+  period: IReportPeriod,
   signal: AbortSignal
 ) => {
   const query = new URLSearchParams({
@@ -52,37 +42,26 @@ const requestReport = async (
   return response[response.keyName];
 };
 
-// Every selected student's card, for printing together. One at a time, in order.
-export const fetchReportsForPrint = createAsyncThunk(
-  'report/fetchForPrint',
+// One card at a time, in order. Each lands as it arrives, so one failure loses
+// only that card and the screen can show how far along it is.
+export const fetchCards = createAsyncThunk(
+  'report/fetchCards',
   async (
     {
       studentExternalIds,
       period,
     }: { studentExternalIds: string[]; period: IReportPeriod },
-    { signal, rejectWithValue }
+    { signal, dispatch }
   ) => {
-    try {
-      const reports: IReportCard[] = [];
-      for (const studentExternalId of studentExternalIds) {
-        reports.push(
-          await requestReport({ studentExternalId, period }, signal)
-        );
+    for (const studentExternalId of studentExternalIds) {
+      if (signal.aborted) return;
+      try {
+        const card = await requestCard(studentExternalId, period, signal);
+        dispatch(cardLoaded({ studentExternalId, card }));
+      } catch {
+        if (signal.aborted) return;
+        dispatch(cardFailed(studentExternalId));
       }
-      return reports;
-    } catch (error) {
-      return rejectWithValue(messageFrom(error, 'Failed to load report cards'));
-    }
-  }
-);
-
-export const fetchReport = createAsyncThunk(
-  'report/fetch',
-  async (params: FetchReportParams, { signal, rejectWithValue }) => {
-    try {
-      return await requestReport(params, signal);
-    } catch (error) {
-      return rejectWithValue(messageFrom(error, 'Failed to load report'));
     }
   }
 );
@@ -91,36 +70,22 @@ const reportSlice = createSlice({
   name: 'report',
   initialState,
   reducers: {
-    // Clears the loaded report (and its error) when the preview closes or the
-    // student/year selection changes, so a stale card never lingers.
-    clearReport: (state) => {
-      state.report = null;
-      state.error = null;
+    clearCards: () => initialState,
+    cardLoaded: (
+      state,
+      action: PayloadAction<{ studentExternalId: string; card: IReportCard }>
+    ) => {
+      state.cards[action.payload.studentExternalId] = action.payload.card;
     },
-  },
-  extraReducers: (builder) => {
-    builder
-      .addCase(fetchReport.pending, (state, action) => {
-        state.loading = true;
-        state.requestId = action.meta.requestId;
-        state.error = null;
-      })
-      .addCase(fetchReport.fulfilled, (state, action) => {
-        if (state.requestId !== action.meta.requestId) return;
-        state.loading = false;
-        state.report = action.payload;
-      })
-      .addCase(fetchReport.rejected, (state, action) => {
-        if (state.requestId !== action.meta.requestId) return;
-        state.loading = false;
-        // An aborted request (superseded by a newer selection) isn't a real
-        // failure — don't flash an error banner for it.
-        if (action.meta.aborted) return;
-        state.report = null;
-        state.error = (action.payload as string) || 'Failed to load report';
-      });
+    cardFailed: (state, action: PayloadAction<string>) => {
+      state.failed.push(action.payload);
+    },
+    retryFailedCards: (state) => {
+      state.failed = [];
+    },
   },
 });
 
-export const { clearReport } = reportSlice.actions;
+export const { clearCards, retryFailedCards } = reportSlice.actions;
+const { cardLoaded, cardFailed } = reportSlice.actions;
 export default reportSlice.reducer;

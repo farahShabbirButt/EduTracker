@@ -89,6 +89,21 @@ export const darkColors: ColorTokens = {
   shadowColor: '0, 0, 0',
 };
 
+// The result card. It stays the same in every theme, and these stay legible
+// when the school's black-and-white printer turns them to grey.
+export const cardColors = {
+  paper: '#FFFFFF',
+  ink: '#14142B',
+  accent: '#4338CA',
+  label: '#3730A3',
+  onLabel: '#FFFFFF',
+  tint: '#ECEBFE',
+  stripe: '#F6F5FB',
+  block: '#C9C6F7',
+  line: '#2A2760',
+  rule: 'rgba(20, 20, 43, 0.3)',
+};
+
 export const fonts = {
   body: '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif',
   display: '"Fraunces", Georgia, serif',
