@@ -4,7 +4,7 @@ import './index.css';
 import App from './App.tsx';
 import './print.css';
 
-import { BrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
@@ -18,15 +18,17 @@ apiClient.setOnUnauthorized(() => {
   store.dispatch(sessionExpired());
 });
 
+// A data router, because the unsaved-work guard's useBlocker needs one. App keeps
+// its own routes, so they can depend on the auth state.
+const router = createBrowserRouter([{ path: '*', element: <App /> }]);
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeContextProvider>
-      <BrowserRouter basename="">
-        <Provider store={store}>
-          <App />
-          <ToastContainer autoClose={3000} />
-        </Provider>
-      </BrowserRouter>
+      <Provider store={store}>
+        <RouterProvider router={router} />
+        <ToastContainer autoClose={3000} />
+      </Provider>
     </ThemeContextProvider>
   </StrictMode>
 );

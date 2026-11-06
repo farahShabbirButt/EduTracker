@@ -124,7 +124,8 @@ const GeneratedReports = ({ reportSettings }: IGeneratedReportsProps) => {
               justifyContent="space-between"
               alignItems="center"
               p={1}
-              borderBottom="1px solid #eee"
+              borderBottom={1}
+              borderColor="divider"
             >
               <Typography>
                 {student.firstName} {student.lastName} ({student.rollNumber})

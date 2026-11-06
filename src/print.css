@@ -2,8 +2,7 @@
 @page { size: A4 landscape; margin: 8mm; }
 
 @media print {
-  /* Block, not the app's flex: a flex body lets a wide card run past the margin */
-  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; display: block; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; }
   /* The dark theme's page colours are copied into the print frame too */
   html, body { background: #fff !important; color: #000 !important; }
   .no-print { display: none !important; }

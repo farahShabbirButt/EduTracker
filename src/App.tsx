@@ -3,9 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Box, CircularProgress } from '@mui/material';
 import './App.css';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import ThemeShowcase from './theme/ThemeShowcase';
 import { routes } from './config/routes';
-import ResultCardPreview from './components/testers/ResultCardPreview';
 import AuthLayout from './layout/AuthLayout';
 import LoginForm from './components/auth/Login';
 import ForgotPasswordForm from './components/auth/ForgotPassword';
@@ -14,7 +12,10 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import PortalLayout from './layout/PortalLayout';
 import StudentsManagement from './components/portal/Students/StudentsManagement';
 import SubjectsManagement from './components/portal/Subjects/SubjectsManagement';
-import MonthlyDataManagement from './components/portal/MonthlyData/MonthlyDataManagement';
+import MarksPage from './components/portal/MonthlyData/MarksPage';
+import TestsPage from './components/portal/MonthlyData/TestsPage';
+import ConductEntry from './components/portal/MonthlyData/ConductEntry';
+import ProfilePage from './components/portal/Profile/ProfilePage';
 import ReportsManagement from './components/portal/Reports/ReportsManagement';
 import SchoolDetails from './components/portal/Settings/SchoolDetails';
 import ClassesManagement from './components/portal/Classes/ClassesManagement';
@@ -52,8 +53,6 @@ function App() {
     <Box sx={{ height: '100%' }}>
       <Routes>
         <Route path={routes.home} element={<h1>Education Tracker System</h1>} />
-        <Route path="theme" element={<ThemeShowcase />} />
-        <Route path="preview" element={<ResultCardPreview />} />
 
         {/* Auth Module */}
         <Route
@@ -99,10 +98,10 @@ function App() {
               path={routes.portal.classes}
               element={<ClassesManagement />}
             />
-            <Route
-              path={routes.portal.monthlyData}
-              element={<MonthlyDataManagement />}
-            />
+            <Route path={routes.portal.marks} element={<MarksPage />} />
+            <Route path={routes.portal.tests} element={<TestsPage />} />
+            <Route path={routes.portal.conduct} element={<ConductEntry />} />
+            <Route path={routes.portal.profile} element={<ProfilePage />} />
             <Route
               path={routes.portal.reports}
               element={<ReportsManagement />}
@@ -110,6 +109,7 @@ function App() {
             <Route path={routes.portal.settings} element={<SchoolDetails />} />
           </Route>
         </Route>
+        <Route path="*" element={<Navigate to={routes.home} replace />} />
       </Routes>
     </Box>
   );

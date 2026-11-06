@@ -1,353 +1,304 @@
 import { createTheme } from '@mui/material/styles';
+import type {} from '@mui/x-data-grid/themeAugmentation';
+import {
+  darkColors,
+  fonts,
+  lightColors,
+  motion,
+  radii,
+  shadows,
+} from './tokens';
 
-// Education Tracker Theme Configuration
+// Builds the MUI theme from tokens.ts. No colour or size is decided here.
 const createEducationTrackerTheme = (isDarkMode = false) => {
-  const theme = createTheme({
+  const c = isDarkMode ? darkColors : lightColors;
+  const shadow = shadows(c.shadowColor);
+
+  const press = {
+    transition: `transform ${motion.fast} ${motion.ease}, background-color ${motion.medium}, border-color ${motion.medium}, color ${motion.medium}, box-shadow ${motion.medium}`,
+    '&:active': { transform: `scale(${motion.pressScale})` },
+  };
+
+  return createTheme({
+    studio: { radii, motion, fonts, shadows: shadow },
+
     palette: {
       mode: isDarkMode ? 'dark' : 'light',
-
-      // Primary color scheme - Purple tone for education
+      studio: c,
       primary: {
-        main: '#822cd3', // Purple primary
-        light: '#a855f7', // Lighter purple
-        dark: '#6b21a8', // Darker purple
-        contrastText: '#ffffff',
+        main: c.primary,
+        light: c.primaryBright,
+        dark: c.primaryDark,
+        contrastText: c.onPrimary,
       },
-
-      // Secondary color - Complementary accent
       secondary: {
-        main: '#f5f5f5', // Light gray
-        light: '#fafafa', // Very light gray
-        dark: '#e0e0e0', // Medium gray
-        contrastText: '#822cd3',
+        main: c.surfaceSoft,
+        light: c.surface,
+        dark: c.line,
+        contrastText: c.ink,
       },
-
-      // Background colors
       background: {
-        default: isDarkMode ? '#121212' : '#ffffff',
-        paper: isDarkMode ? '#2f2f2f' : '#ffffff',
-        primary: isDarkMode ? '#1e1e1e' : '#f7f7f7', // Light background areas
-        secondary: isDarkMode ? '#2d2d2d' : '#f5f5f5', // Card backgrounds
-        input: isDarkMode ? '#2d2d2d' : '#ffffff',
-        accent: isDarkMode ? '#3a2f44' : '#f3e8ff', // Light purple accent
+        default: c.page,
+        paper: c.surface,
+        primary: c.page,
+        secondary: c.surfaceSoft,
+        input: c.surface,
+        accent: c.tint,
       },
-
-      // Text colors
       text: {
-        primary: isDarkMode ? '#ffffff' : '#2c3e50',
-        secondary: isDarkMode ? '#b0b0b0' : '#5a6c7d',
-        disabled: isDarkMode ? '#666666' : '#9e9e9e',
-        hint: isDarkMode ? '#888888' : '#757575',
+        primary: c.ink,
+        secondary: c.inkSoft,
+        disabled: c.inkDisabled,
+        hint: c.inkMuted,
       },
-
-      // Heading colors
-      heading: {
-        primary: isDarkMode ? '#ffffff' : '#1a202c',
-        secondary: isDarkMode ? '#e2e8f0' : '#2d3748',
-        accent: '#822cd3',
-      },
-
-      // Status colors for education tracking
-      success: {
-        main: '#4caf50', // Green for completed tasks
-        light: '#81c784',
-        dark: '#388e3c',
-      },
-
-      warning: {
-        main: '#ff9800', // Orange for pending items
-        light: '#ffb74d',
-        dark: '#f57c00',
-      },
-
-      error: {
-        main: '#f44336', // Red for overdue/failed
-        light: '#e57373',
-        dark: '#d32f2f',
-      },
-
-      info: {
-        main: '#8b5cf6', // Purple info color
-        light: '#a78bfa',
-        dark: '#7c3aed',
-      },
-
-      // Custom colors for education features
+      divider: c.line,
+      heading: { primary: c.ink, secondary: c.inkSoft, accent: c.primary },
+      success: { main: c.green, light: c.greenSoft, dark: c.greenInk },
+      warning: { main: c.amber, light: c.amberSoft, dark: c.amberInk },
+      error: { main: c.red, light: c.redSoft, dark: c.redStrong },
+      info: { main: c.blue, light: c.blueSoft, dark: c.blue },
       grade: {
-        excellent: '#4caf50', // A grades
-        good: '#8bc34a', // B grades
-        average: '#ffc107', // C grades
-        poor: '#ff5722', // D grades
-        fail: '#f44336', // F grades
+        excellent: c.green,
+        good: c.greenInk,
+        average: c.amber,
+        poor: c.amberInk,
+        fail: c.red,
       },
-
-      // UI element colors
-      border: {
-        main: isDarkMode ? '#404040' : '#e0e0e0',
-        light: isDarkMode ? '#333333' : '#f0f0f0',
-        focus: '#822cd3',
-      },
-
-      hover: {
-        main: isDarkMode ? '#5b3480' : '#f3e8ff',
-        secondary: isDarkMode ? '#333333' : '#f5f5f5',
-      },
-
-      icon: {
-        default: isDarkMode ? '#b0b0b0' : '#5a6c7d',
-        primary: '#822cd3',
-        secondary: isDarkMode ? '#888888' : '#757575',
-      },
+      border: { main: c.line, light: c.surfaceSoft, focus: c.primaryBright },
+      hover: { main: c.tint, secondary: c.surfaceSoft },
+      icon: { default: c.inkSoft, primary: c.primary, secondary: c.inkMuted },
+      DataGrid: { bg: c.surface, headerBg: c.surface, pinnedBg: c.surface },
     },
 
     typography: {
-      fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-
-      // Heading styles
-      h1: {
-        fontWeight: 700,
-        fontSize: '2.5rem',
-        lineHeight: 1.2,
-        letterSpacing: '-0.02em',
-      },
-      h2: {
-        fontWeight: 600,
-        fontSize: '2rem',
-        lineHeight: 1.3,
-        letterSpacing: '-0.01em',
-      },
-      h3: {
-        fontWeight: 600,
-        fontSize: '1.5rem',
-        lineHeight: 1.4,
-      },
-      h4: {
-        fontWeight: 600,
-        fontSize: '1.25rem',
-        lineHeight: 1.4,
-      },
-      h5: {
-        fontWeight: 600,
-        fontSize: '1.125rem',
-        lineHeight: 1.5,
-      },
-      h6: {
-        fontWeight: 600,
-        fontSize: '1rem',
-        lineHeight: 1.5,
-      },
-
-      // Body text
-      body1: {
-        fontSize: '1rem',
-        lineHeight: 1.6,
-        fontWeight: 400,
-      },
-      body2: {
-        fontSize: '0.875rem',
-        lineHeight: 1.5,
-        fontWeight: 400,
-      },
-
-      // Button text
-      button: {
-        fontWeight: 600,
-        fontSize: '0.875rem',
-        textTransform: 'none',
-        letterSpacing: '0.02em',
-      },
-
-      // Caption and overline
-      caption: {
-        fontSize: '0.75rem',
-        lineHeight: 1.4,
-        fontWeight: 400,
-      },
-      overline: {
-        fontSize: '0.75rem',
-        lineHeight: 1.4,
-        fontWeight: 600,
-        textTransform: 'uppercase',
-        letterSpacing: '0.08em',
-      },
+      fontFamily: fonts.body,
+      h1: { fontWeight: 800, fontSize: '2.5rem', letterSpacing: '-0.02em' },
+      h2: { fontWeight: 800, fontSize: '2rem', letterSpacing: '-0.02em' },
+      h3: { fontWeight: 800, fontSize: '1.5rem', letterSpacing: '-0.01em' },
+      h4: { fontWeight: 700, fontSize: '1.25rem' },
+      h5: { fontWeight: 700, fontSize: '1.125rem' },
+      h6: { fontWeight: 700, fontSize: '1rem' },
+      body1: { fontSize: '0.95rem', lineHeight: 1.55, fontWeight: 500 },
+      body2: { fontSize: '0.875rem', lineHeight: 1.5, fontWeight: 500 },
+      button: { fontWeight: 700, fontSize: '0.9rem', textTransform: 'none' },
+      caption: { fontSize: '0.78rem', lineHeight: 1.4, fontWeight: 500 },
     },
 
-    shape: {
-      borderRadius: 8,
-    },
-
+    shape: { borderRadius: radii.base },
     spacing: 8,
 
     components: {
-      // Global styles
       MuiCssBaseline: {
         styleOverrides: {
           body: {
-            scrollbarColor: isDarkMode ? '#404040 #2d2d2d' : '#c1c1c1 #f1f1f1',
-            '&::-webkit-scrollbar, & *::-webkit-scrollbar': {
-              width: 8,
-              height: 8,
-            },
-            '&::-webkit-scrollbar-thumb, & *::-webkit-scrollbar-thumb': {
-              borderRadius: 8,
-              backgroundColor: isDarkMode ? '#404040' : '#c1c1c1',
-            },
-            '&::-webkit-scrollbar-track, & *::-webkit-scrollbar-track': {
-              backgroundColor: isDarkMode ? '#2d2d2d' : '#f1f1f1',
+            backgroundColor: c.page,
+            transition: `background-color ${motion.medium}, color ${motion.medium}`,
+            scrollbarColor: `${c.scrollbar} transparent`,
+          },
+          '@keyframes studio-rise': {
+            from: { opacity: 0, transform: 'translateY(8px)' },
+          },
+          '@media (prefers-reduced-motion: reduce)': {
+            '*, *::before, *::after': {
+              animationDuration: '0.01ms !important',
+              animationDelay: '0ms !important',
+              animationIterationCount: '1 !important',
+              transitionDuration: '0.01ms !important',
             },
           },
         },
       },
 
-      // Button styles
-      MuiButton: {
+      // Without the ripple, MUI draws no keyboard focus of its own
+      MuiButtonBase: {
+        defaultProps: { disableRipple: true },
         styleOverrides: {
           root: {
-            borderRadius: 8,
-            textTransform: 'none',
-            fontWeight: 600,
-            padding: '10px 20px',
-            boxShadow: 'none',
-            '&:hover': {
-              boxShadow: '0 2px 8px rgba(130, 44, 211, 0.2)',
-            },
-          },
-          containedPrimary: {
-            backgroundColor: '#822cd3',
-            color: '#ffffff',
-            '&:hover': {
-              backgroundColor: '#6b21a8',
-            },
-          },
-          containedSecondary: {
-            backgroundColor: '#f3f4f6',
-            color: '#000000',
-            '&:hover': {
-              backgroundColor: '#e5e7eb',
-            },
-          },
-
-          outlinedPrimary: {
-            borderColor: '#822cd3',
-            color: '#822cd3',
-            '&:hover': {
-              backgroundColor: '#f3e8ff',
-              borderColor: '#822cd3',
-            },
-          },
-          textPrimary: {
-            color: '#822cd3',
-            '&:hover': {
-              backgroundColor: '#f3e8ff',
+            '&.Mui-focusVisible': {
+              outline: `2px solid ${c.primaryBright}`,
+              outlineOffset: 2,
             },
           },
         },
       },
 
-      // Card styles
+      MuiButton: {
+        defaultProps: { disableElevation: true },
+        styleOverrides: {
+          root: {
+            borderRadius: radii.pill,
+            minHeight: 44,
+            padding: '0 20px',
+            ...press,
+          },
+          sizeSmall: { minHeight: 36, padding: '0 14px' },
+          containedPrimary: {
+            boxShadow: `0 8px 18px -10px ${c.primary}`,
+            '&:hover': { backgroundColor: c.primaryBright },
+          },
+          containedSecondary: {
+            color: c.ink,
+            backgroundColor: c.surfaceSoft,
+            '&:hover': { backgroundColor: c.line },
+          },
+          outlinedPrimary: {
+            borderColor: c.line,
+            color: c.ink,
+            backgroundColor: c.surface,
+            '&:hover': {
+              borderColor: c.primaryBright,
+              color: c.primary,
+              backgroundColor: c.surface,
+            },
+          },
+          textPrimary: { '&:hover': { backgroundColor: c.tint } },
+        },
+      },
+
+      MuiIconButton: {
+        styleOverrides: {
+          root: ({ ownerState }) => ({
+            borderRadius: radii.medium,
+            ...press,
+            // A coloured button, such as a red delete, keeps its colour
+            ...((ownerState.color ?? 'default') === 'default' && {
+              '@media (hover: hover)': {
+                '&:hover': { backgroundColor: c.tint, color: c.tintInk },
+              },
+            }),
+          }),
+        },
+      },
+
       MuiCard: {
         styleOverrides: {
           root: {
-            borderRadius: 12,
-            boxShadow: isDarkMode
-              ? '0 2px 12px rgba(0, 0, 0, 0.3)'
-              : '0 2px 12px rgba(0, 0, 0, 0.08)',
-            border: isDarkMode ? '1px solid #333333' : '1px solid #f0f0f0',
-            '&:hover': {
-              boxShadow: isDarkMode
-                ? '0 4px 20px rgba(0, 0, 0, 0.4)'
-                : '0 4px 20px rgba(0, 0, 0, 0.12)',
-            },
+            borderRadius: radii.large,
+            boxShadow: shadow.small,
+            border: `1px solid ${c.line}`,
           },
         },
       },
 
-      // Input field styles
-      MuiTextField: {
-        styleOverrides: {
-          root: {
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 8,
-              backgroundColor: isDarkMode ? '#2d2d2d' : '#ffffff',
-              '&:hover .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#822cd3',
-              },
-              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#822cd3',
-                borderWidth: 2,
-              },
-            },
-            '& .MuiInputLabel-root': {
-              color: isDarkMode ? '#b0b0b0' : '#5a6c7d',
-              '&.Mui-focused': {
-                color: '#822cd3',
-              },
-            },
-          },
-        },
-      },
-
-      // Chip styles (for tags, grades, etc.)
-      MuiChip: {
-        styleOverrides: {
-          root: {
-            borderRadius: 16,
-            fontWeight: 500,
-          },
-          colorPrimary: {
-            backgroundColor: '#f3e8ff',
-            color: '#822cd3',
-            '&:hover': {
-              backgroundColor: '#e9d5ff',
-            },
-          },
-        },
-      },
-
-      // Paper styles
       MuiPaper: {
         styleOverrides: {
+          root: { backgroundImage: 'none' },
+          rounded: { borderRadius: radii.large },
+        },
+      },
+
+      MuiOutlinedInput: {
+        styleOverrides: {
           root: {
-            backgroundImage: 'none',
-            borderRadius: 8,
+            borderRadius: radii.medium,
+            backgroundColor: c.surface,
+            transition: `box-shadow ${motion.medium}`,
+            '& .MuiOutlinedInput-notchedOutline': { borderColor: c.inputLine },
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: c.primaryBright,
+            },
+            '&.Mui-focused': { boxShadow: `0 0 0 3px ${c.tint}` },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+              borderColor: c.primaryBright,
+              borderWidth: 1,
+            },
+            '&.Mui-error .MuiOutlinedInput-notchedOutline': {
+              borderColor: c.red,
+            },
           },
         },
       },
 
-      // Typography overrides
-      MuiTypography: {
+      MuiChip: {
+        styleOverrides: {
+          root: { borderRadius: radii.pill, fontWeight: 700 },
+          colorPrimary: { backgroundColor: c.tint, color: c.tintInk },
+        },
+      },
+
+      MuiDialog: {
+        styleOverrides: {
+          paper: { borderRadius: radii.large, boxShadow: shadow.large },
+        },
+      },
+
+      MuiMenu: {
+        styleOverrides: {
+          paper: {
+            borderRadius: radii.medium,
+            border: `1px solid ${c.line}`,
+            boxShadow: shadow.large,
+          },
+        },
+      },
+
+      MuiTooltip: {
+        styleOverrides: {
+          tooltip: {
+            borderRadius: radii.small,
+            backgroundColor: c.ink,
+            color: c.surface,
+            fontSize: '0.8rem',
+          },
+        },
+      },
+
+      MuiTabs: {
+        styleOverrides: { indicator: { height: 3, borderRadius: 3 } },
+      },
+      MuiTab: { styleOverrides: { root: { fontWeight: 700 } } },
+
+      MuiAlert: {
+        styleOverrides: {
+          root: { borderRadius: radii.medium },
+          standardError: {
+            backgroundColor: c.redSoft,
+            color: c.red,
+            '& .MuiAlert-icon': { color: c.red },
+          },
+          standardWarning: {
+            backgroundColor: c.amberSoft,
+            color: c.amberInk,
+            '& .MuiAlert-icon': { color: c.amberInk },
+          },
+          standardSuccess: {
+            backgroundColor: c.greenSoft,
+            color: c.greenInk,
+            '& .MuiAlert-icon': { color: c.greenInk },
+          },
+          standardInfo: {
+            backgroundColor: c.tint,
+            color: c.tintInk,
+            '& .MuiAlert-icon': { color: c.tintInk },
+          },
+        },
+      },
+
+      MuiTableCell: {
+        styleOverrides: {
+          root: { borderColor: c.line },
+          head: { color: c.inkMuted, fontWeight: 700 },
+        },
+      },
+
+      MuiDataGrid: {
         styleOverrides: {
           root: {
-            wordBreak: 'break-word',
-          },
-          h1: {
-            color: isDarkMode ? '#ffffff' : '#1a202c',
-          },
-          h2: {
-            color: isDarkMode ? '#ffffff' : '#1a202c',
-          },
-          h3: {
-            color: isDarkMode ? '#ffffff' : '#1a202c',
-          },
-          h4: {
-            color: isDarkMode ? '#ffffff' : '#1a202c',
-          },
-          h5: {
-            color: isDarkMode ? '#ffffff' : '#1a202c',
-          },
-          h6: {
-            color: isDarkMode ? '#ffffff' : '#1a202c',
+            border: 0,
+            // Doubled up to beat the variables the grid sets on itself
+            '&.MuiDataGrid-root': {
+              '--DataGrid-t-color-border-base': c.line,
+            },
+            '& .MuiDataGrid-columnHeaderTitle': {
+              color: c.inkMuted,
+              fontWeight: 700,
+            },
+            '& .MuiDataGrid-row:hover': { backgroundColor: c.surfaceSoft },
           },
         },
       },
     },
   });
-
-  return theme;
 };
-
-// Usage example:
-// const theme = createEducationTrackerTheme(false); // Light mode
-// const darkTheme = createEducationTrackerTheme(true); // Dark mode
 
 export default createEducationTrackerTheme;

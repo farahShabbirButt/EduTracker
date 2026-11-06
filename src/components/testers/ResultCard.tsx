@@ -1,4 +1,5 @@
 // ResultCard.tsx
+import { fonts } from '../../theme/tokens';
 import { forwardRef } from 'react';
 import {
   Box,
@@ -27,7 +28,10 @@ type ResultCardProps = {
 const border = '1px solid #000';
 
 // The card is paper: black on white whatever theme the app is in
-const cardTheme = createTheme({ palette: { mode: 'light' } });
+const cardTheme = createTheme({
+  palette: { mode: 'light' },
+  typography: { fontFamily: fonts.body },
+});
 
 // The school's wording, not the stored enum
 const conductLabel = (rating: string | null) =>

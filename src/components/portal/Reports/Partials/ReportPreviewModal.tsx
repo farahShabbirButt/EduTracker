@@ -38,7 +38,6 @@ const ReportPreviewModal = ({
   const hasTests = !!report && report.rows.length > 0;
   const missingMarks = report?.missingMarks ?? [];
 
-  // Same working react-to-print pattern used by ResultCardPreview.
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     // Becomes the PDF's file name, so saved cards don't overwrite each other

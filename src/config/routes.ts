@@ -11,8 +11,11 @@ export const routes = {
     student: '/students',
     subjects: '/subjects',
     classes: '/classes',
-    monthlyData: '/monthly-data',
+    marks: '/marks',
+    tests: '/tests',
+    conduct: '/conduct',
     reports: '/reports',
     settings: '/settings',
+    profile: '/profile',
   },
 };

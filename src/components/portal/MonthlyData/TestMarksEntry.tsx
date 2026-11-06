@@ -179,14 +179,13 @@ export default function TestMarksEntry({
   // NaN counts: half-typed text is still unsaved work
   const dirty = useMemo(
     () =>
-      !saving &&
       !entryLoading &&
       !!marksEntry &&
       marksEntry.students.some((s) => {
         const value = marks[s.externalId];
         return value !== undefined && !Object.is(value, s.marksObtained ?? '');
       }),
-    [marks, marksEntry, saving, entryLoading]
+    [marks, marksEntry, entryLoading]
   );
 
   useEffect(() => {

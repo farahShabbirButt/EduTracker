@@ -30,6 +30,7 @@ import {
 import { fetchClasses } from '../../../redux/slices/classSlice';
 import type { Student, StudentFormValues } from './@types/student.d';
 import StudentModal from './Partials/StudentModal';
+import { useSearchParams } from 'react-router-dom';
 import DeleteDialog from '../../../common/Dialogs/DeleteDialog/DeleteDialog';
 
 import {
@@ -58,6 +59,9 @@ const StudentsManagement = () => {
   const [rowToDelete, setRowToDelete] = useState<Student | null>(null);
 
   // filters
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Set when someone picks a student in the header's search
+  const picked = searchParams.get('student');
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState<string>('All');
   // Load data on mount
@@ -79,6 +83,9 @@ const StudentsManagement = () => {
         (r) => r.class?.externalId === classFilter
       );
     }
+    if (picked) {
+      return filteredRows.filter((r) => r.externalId === picked);
+    }
     const q = search.trim().toLowerCase();
     if (q) {
       filteredRows = filteredRows.filter((r) => {
@@ -97,7 +104,7 @@ const StudentsManagement = () => {
       });
     }
     return filteredRows;
-  }, [rows, search, classFilter]);
+  }, [rows, search, classFilter, picked]);
 
   const openCreate = () => {
     setDialogMode('create');
@@ -291,7 +298,10 @@ const StudentsManagement = () => {
             <TextField
               placeholder="Search name, father name, roll #, phone, email"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                if (picked) setSearchParams({});
+              }}
               fullWidth
               InputProps={{
                 startAdornment: (

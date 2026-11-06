@@ -1,4 +1,5 @@
 import type { PaletteColor, PaletteColorOptions } from '@mui/material/styles';
+import type { ColorTokens } from './tokens';
 
 // Extend the default MUI Palette types to include standalone colors
 interface TypeBorder {
@@ -49,6 +50,7 @@ declare module '@mui/material/styles' {
     hover: TypeHover;
     heading: TypeHeading;
     grade: TypeGrade;
+    studio: ColorTokens;
   }
 
   interface PaletteOptions {
@@ -59,5 +61,19 @@ declare module '@mui/material/styles' {
     placeholder?: PaletteColorOptions;
     heading?: Partial<TypeHeading>;
     grade?: Partial<TypeGrade>;
+    studio?: ColorTokens;
+  }
+
+  interface Theme {
+    studio: {
+      radii: typeof import('./tokens').radii;
+      motion: typeof import('./tokens').motion;
+      fonts: typeof import('./tokens').fonts;
+      shadows: ReturnType<typeof import('./tokens').shadows>;
+    };
+  }
+
+  interface ThemeOptions {
+    studio?: Theme['studio'];
   }
 }
