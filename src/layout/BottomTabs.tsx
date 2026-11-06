@@ -1,15 +1,8 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { Theme } from '@mui/material/styles';
-import {
-  Box,
-  ButtonBase,
-  Drawer,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-} from '@mui/material';
+import { Box, ButtonBase, Drawer, IconButton, Typography } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import { isActive, moreItems, tabItems } from './navigation';
 
@@ -108,20 +101,85 @@ const BottomTabs = () => {
         slotProps={{
           paper: {
             sx: (theme) => ({
-              borderRadius: `${theme.studio.radii.large}px ${theme.studio.radii.large}px 0 0`,
-              pb: 2,
+              left: 12,
+              right: 12,
+              bottom: 12,
+              p: 2,
+              borderRadius: `${theme.studio.radii.large}px`,
             }),
           },
         }}
       >
-        <List aria-label="More">
-          {moreItems.map((item) => (
-            <ListItemButton key={item.to} onClick={() => go(item.to)}>
-              <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.label} />
-            </ListItemButton>
-          ))}
-        </List>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: 1.5,
+          }}
+        >
+          <Typography variant="h5" component="h2">
+            More
+          </Typography>
+          <IconButton aria-label="Close" onClick={() => setMoreOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        <Box
+          component="nav"
+          aria-label="More"
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: 1,
+          }}
+        >
+          {moreItems.map((item) => {
+            const active = isActive(pathname, item.to);
+            return (
+              <ButtonBase
+                key={item.to}
+                onClick={() => go(item.to)}
+                aria-current={active ? 'page' : undefined}
+                sx={(theme) => ({
+                  justifyContent: 'flex-start',
+                  gap: 1.25,
+                  p: 1.25,
+                  textAlign: 'start',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  borderRadius: `${theme.studio.radii.medium}px`,
+                  color: active ? theme.palette.studio.tintInk : 'text.primary',
+                  bgcolor: active
+                    ? theme.palette.studio.tint
+                    : theme.palette.studio.surfaceSoft,
+                  '&:active': {
+                    transform: `scale(${theme.studio.motion.pressScale})`,
+                  },
+                })}
+              >
+                <Box
+                  sx={(theme) => ({
+                    flex: 'none',
+                    width: 36,
+                    height: 36,
+                    display: 'grid',
+                    placeItems: 'center',
+                    borderRadius: `${theme.studio.radii.small}px`,
+                    color: theme.palette.studio.tintInk,
+                    bgcolor: active
+                      ? theme.palette.studio.surface
+                      : theme.palette.studio.tint,
+                    '& svg': { fontSize: 20 },
+                  })}
+                >
+                  {item.icon}
+                </Box>
+                {item.label}
+              </ButtonBase>
+            );
+          })}
+        </Box>
       </Drawer>
     </>
   );

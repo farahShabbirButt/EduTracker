@@ -40,6 +40,7 @@ export const lightColors = {
   pill: '#FFFFFF',
   pillInk: '#2E2A9C',
   hero: '#4338CA',
+  heroGlow: '#5850EC',
   // Printed paper stays white in every theme
   paper: '#FFFFFF',
   paperInk: '#000000',
@@ -87,6 +88,7 @@ export const darkColors: ColorTokens = {
   pill: '#8D88F7',
   pillInk: '#14123D',
   hero: '#332DA8',
+  heroGlow: '#453EC4',
   scrollbar: '#3A3863',
   shadowColor: '0, 0, 0',
 };

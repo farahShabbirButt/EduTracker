@@ -10,6 +10,7 @@ import PeopleOutlineOutlinedIcon from '@mui/icons-material/PeopleOutlineOutlined
 import StarBorderOutlinedIcon from '@mui/icons-material/StarBorderOutlined';
 import PrintOutlinedIcon from '@mui/icons-material/PrintOutlined';
 import EventOutlinedIcon from '@mui/icons-material/EventOutlined';
+import ThemeToggle from '../../common/ThemeToggle';
 import { routes } from '../../config/routes';
 import './landing.css';
 
@@ -428,6 +429,7 @@ export default function LandingPage() {
             <a href="#features">Features</a>
             <a href="#questions">Questions</a>
           </div>
+          <ThemeToggle />
           <Button
             component={RouterLink}
             to={routes.auth.login}

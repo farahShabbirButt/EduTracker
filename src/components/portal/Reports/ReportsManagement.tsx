@@ -8,8 +8,6 @@ import {
   Checkbox,
   Chip,
   CircularProgress,
-  FormControlLabel,
-  Grid,
   MenuItem,
   Skeleton,
   Stack,
@@ -228,30 +226,27 @@ const ReportsManagement = () => {
     </LabeledSelect>
   );
 
+  const anyTicked = ordered.length > 0;
+
   return (
-    <Grid container spacing={2} alignItems="flex-start">
-      <Grid size={{ xs: 12, md: 4 }}>
-        <Card sx={{ p: 2.5 }}>
-          <Typography variant="h5" component="h2" sx={{ mb: 2 }}>
-            Report settings
-          </Typography>
-          <Stack spacing={2}>
-            <Stack direction="row" spacing={1.25}>
-              {monthField('From month', 'fromMonth')}
-              {yearField('From year', 'fromYear')}
-            </Stack>
-            <Stack direction="row" spacing={1.25}>
-              {monthField('To month', 'toMonth')}
-              {yearField('To year', 'toYear')}
-            </Stack>
-            {!periodValid && (
-              <Alert severity="warning">
-                The To month can't be before the From month.
-              </Alert>
-            )}
+    <Stack spacing={2}>
+      <Card sx={{ p: 2.5 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: 'repeat(2, minmax(0, 1fr))',
+              md: 'repeat(4, minmax(0, 1fr))',
+              lg: 'repeat(5, minmax(0, 1fr))',
+            },
+            gap: 2,
+          }}
+        >
+          <Box sx={{ gridColumn: { xs: '1 / -1', lg: 'auto' } }}>
             <LabeledSelect
               label="Class"
               fill
+              minWidth={0}
               placeholder="Choose a class"
               value={classId}
               options={Object.fromEntries(
@@ -265,83 +260,53 @@ const ReportsManagement = () => {
                 </MenuItem>
               ))}
             </LabeledSelect>
-            {classId && (
-              <Box>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 0.5,
-                  }}
-                >
-                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                    Students
-                  </Typography>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() =>
-                      setUnticked(
-                        ordered.length
-                          ? classStudents.map((s) => s.externalId)
-                          : []
-                      )
-                    }
-                  >
-                    {ordered.length ? 'Clear all' : 'Select all'}
-                  </Button>
-                </Box>
-                <Stack>
-                  {classStudents.map((student) => (
-                    <FormControlLabel
-                      key={student.externalId}
-                      label={[student.firstName, student.lastName]
-                        .filter(Boolean)
-                        .join(' ')}
-                      control={
-                        <Checkbox
-                          checked={ordered.includes(student.externalId)}
-                          onChange={(e) =>
-                            setUnticked((was) =>
-                              e.target.checked
-                                ? was.filter((id) => id !== student.externalId)
-                                : [...was, student.externalId]
-                            )
-                          }
-                        />
-                      }
-                    />
-                  ))}
-                </Stack>
-              </Box>
-            )}
-          </Stack>
-        </Card>
-      </Grid>
+          </Box>
+          {monthField('From month', 'fromMonth')}
+          {yearField('From year', 'fromYear')}
+          {monthField('To month', 'toMonth')}
+          {yearField('To year', 'toYear')}
+        </Box>
+        {!periodValid && (
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            The To month can't be before the From month.
+          </Alert>
+        )}
+      </Card>
 
-      <Grid size={{ xs: 12, md: 8 }}>
-        <Card sx={{ p: 2.5 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: 1,
-              mb: 1,
-            }}
-          >
-            <Box>
-              <Typography variant="h5" component="h2">
-                {ordered.length} result{' '}
-                {ordered.length === 1 ? 'card' : 'cards'}
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'text.hint' }}>
-                {pending > 0
-                  ? `Preparing ${shown.length + failedCount + 1} of ${ordered.length}`
-                  : `${ready.length} ready to print`}
-              </Typography>
-            </Box>
+      <Card sx={{ p: 2.5 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 1.5,
+            mb: 1,
+          }}
+        >
+          <Box>
+            <Typography variant="h5" component="h2">
+              {ordered.length} result {ordered.length === 1 ? 'card' : 'cards'}
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.hint' }}>
+              {pending > 0
+                ? `Preparing ${shown.length + failedCount + 1} of ${ordered.length}`
+                : `${ready.length} ready to print`}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            {classStudents.length > 0 && (
+              <Button
+                variant="outlined"
+                onClick={() =>
+                  setUnticked(
+                    anyTicked ? classStudents.map((s) => s.externalId) : []
+                  )
+                }
+              >
+                {anyTicked ? 'Clear all' : 'Select all'}
+              </Button>
+            )}
             <Button
               variant="contained"
               startIcon={
@@ -357,106 +322,122 @@ const ReportsManagement = () => {
               Print all
             </Button>
           </Box>
+        </Box>
 
-          {failedCount > 0 && pending === 0 && (
-            <Box sx={{ mb: 1 }}>
-              <LoadError
-                message={`${failedCount} ${failedCount === 1 ? 'card' : 'cards'} could not load`}
-                onRetry={() => dispatch(retryFailedCards())}
-              />
-            </Box>
-          )}
-
-          {shown.map(({ id, card }, index) => {
-            const hasTests = card.rows.length > 0;
-            return (
-              <Box
-                key={id}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.25,
-                  py: 1.25,
-                  borderTop: index ? 1 : 0,
-                  borderColor: 'divider',
-                }}
-              >
-                <Avatar
-                  sx={(theme) => ({
-                    width: 38,
-                    height: 38,
-                    fontSize: 13,
-                    fontWeight: 800,
-                    bgcolor: 'background.accent',
-                    color: theme.palette.studio.tintInk,
-                  })}
-                >
-                  {card.student.name.charAt(0).toUpperCase()}
-                </Avatar>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography noWrap sx={{ fontWeight: 700 }}>
-                    {card.student.name}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    noWrap
-                    sx={{ color: 'text.hint' }}
-                  >
-                    {cardSummary(card)}
-                  </Typography>
-                </Box>
-                {!hasTests ? (
-                  <Chip size="small" label="No tests" />
-                ) : (
-                  card.missingMarks.length > 0 && (
-                    <Chip
-                      size="small"
-                      label="Marks missing"
-                      sx={(theme) => ({
-                        display: { xs: 'none', sm: 'inline-flex' },
-                        bgcolor: theme.palette.studio.amberSoft,
-                        color: theme.palette.studio.amberInk,
-                      })}
-                    />
-                  )
-                )}
-                <Button
-                  variant="outlined"
-                  size="small"
-                  disabled={!hasTests}
-                  aria-label={`Preview ${card.student.name}`}
-                  onClick={() => setPreview(card)}
-                >
-                  Preview
-                </Button>
-              </Box>
-            );
-          })}
-
-          {Array.from({ length: pending }, (_, i) => (
-            <Skeleton key={i} variant="rounded" height={52} sx={{ my: 1 }} />
-          ))}
-
-          {ordered.length === 0 && (
-            <EmptyState
-              title={
-                !classId
-                  ? 'Choose a class'
-                  : classStudents.length === 0
-                    ? 'No students in this class'
-                    : 'No students selected'
-              }
-              detail={
-                !classId
-                  ? "Every student's card appears here, ready to preview and print."
-                  : classStudents.length === 0
-                    ? 'Add students to this class first.'
-                    : 'Tick the students you want cards for.'
-              }
+        {failedCount > 0 && pending === 0 && (
+          <Box sx={{ mb: 1 }}>
+            <LoadError
+              message={`${failedCount} ${failedCount === 1 ? 'card' : 'cards'} could not load`}
+              onRetry={() => dispatch(retryFailedCards())}
             />
-          )}
-        </Card>
-      </Grid>
+          </Box>
+        )}
+
+        {classStudents.map((student, index) => {
+          const id = student.externalId;
+          const name = [student.firstName, student.lastName]
+            .filter(Boolean)
+            .join(' ');
+          const ticked = ordered.includes(id);
+          const card = ticked ? cards[id] : undefined;
+          const loading =
+            ticked && !card && periodValid && !failed.includes(id);
+          const hasTests = !!card && card.rows.length > 0;
+
+          return (
+            <Box
+              key={id}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.25,
+                py: 1,
+                borderTop: index ? 1 : 0,
+                borderColor: 'divider',
+              }}
+            >
+              <Checkbox
+                checked={ticked}
+                onChange={(e) =>
+                  setUnticked((was) =>
+                    e.target.checked
+                      ? was.filter((other) => other !== id)
+                      : [...was, id]
+                  )
+                }
+                slotProps={{
+                  input: { 'aria-label': `Include ${name}` },
+                }}
+              />
+              <Avatar
+                sx={(theme) => ({
+                  width: 38,
+                  height: 38,
+                  fontSize: 13,
+                  fontWeight: 800,
+                  bgcolor: 'background.accent',
+                  color: theme.palette.studio.tintInk,
+                  opacity: ticked ? 1 : 0.5,
+                })}
+              >
+                {name.charAt(0).toUpperCase()}
+              </Avatar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography
+                  noWrap
+                  sx={{
+                    fontWeight: 700,
+                    color: ticked ? 'text.primary' : 'text.secondary',
+                  }}
+                >
+                  {name}
+                </Typography>
+                {loading ? (
+                  <Skeleton width="55%" />
+                ) : (
+                  <Typography variant="body2" sx={{ color: 'text.hint' }}>
+                    {card
+                      ? cardSummary(card)
+                      : `Roll ${student.rollNumber}${ticked ? '' : ', not included'}`}
+                  </Typography>
+                )}
+              </Box>
+              {card && !hasTests && <Chip size="small" label="No tests" />}
+              {hasTests && card.missingMarks.length > 0 && (
+                <Chip
+                  size="small"
+                  label="Marks missing"
+                  sx={(theme) => ({
+                    display: { xs: 'none', sm: 'inline-flex' },
+                    bgcolor: theme.palette.studio.amberSoft,
+                    color: theme.palette.studio.amberInk,
+                  })}
+                />
+              )}
+              <Button
+                variant="outlined"
+                size="small"
+                disabled={!hasTests}
+                aria-label={`Preview ${name}`}
+                onClick={() => card && setPreview(card)}
+              >
+                Preview
+              </Button>
+            </Box>
+          );
+        })}
+
+        {classStudents.length === 0 && (
+          <EmptyState
+            title={classId ? 'No students in this class' : 'Choose a class'}
+            detail={
+              classId
+                ? 'Add students to this class first.'
+                : "Every student's card appears here, ready to preview and print."
+            }
+          />
+        )}
+      </Card>
 
       {/* Only ever printed, never shown */}
       <Box sx={{ display: 'none' }}>
@@ -472,7 +453,7 @@ const ReportsManagement = () => {
       {preview && (
         <ReportPreviewModal card={preview} onClose={() => setPreview(null)} />
       )}
-    </Grid>
+    </Stack>
   );
 };
 

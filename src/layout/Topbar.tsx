@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -21,13 +21,11 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
-import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
-import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import { routes } from '../config/routes';
-import { ThemeContext } from '../theme/ThemeContextProvider';
+import ThemeToggle from '../common/ThemeToggle';
 import type { AppDispatch, RootState } from '../redux/store';
 import { logout } from '../redux/slices/authSlice';
 import { fetchStudents } from '../redux/slices/studentSlice';
@@ -46,7 +44,6 @@ const Topbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { confirmLeaving } = useNavigationGuard();
-  const themeContext = useContext(ThemeContext);
   const user = useSelector((state: RootState) => state.auth.user);
   const students = useSelector((state: RootState) => state.students.students);
 
@@ -76,8 +73,6 @@ const Topbar = () => {
       navigate(routes.auth.login, { replace: true });
     });
   };
-
-  const isDark = themeContext?.isDarkMode ?? false;
 
   return (
     <Box
@@ -194,15 +189,7 @@ const Topbar = () => {
           </List>
         )}
       </Popover>
-
-      <Tooltip title={isDark ? 'Use light theme' : 'Use dark theme'}>
-        <IconButton
-          aria-label={isDark ? 'Use light theme' : 'Use dark theme'}
-          onClick={() => themeContext?.toogleTheme(isDark ? 'light' : 'dark')}
-        >
-          {isDark ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
-        </IconButton>
-      </Tooltip>
+      <ThemeToggle />
 
       <Tooltip title={user?.email ?? 'Your account'}>
         <IconButton

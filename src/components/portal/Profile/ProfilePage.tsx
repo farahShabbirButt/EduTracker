@@ -1,19 +1,12 @@
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Grid,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Stack } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'react-toastify';
 import type { AppDispatch, RootState } from '../../../redux/store';
 import { changePassword, updateProfile } from '../../../redux/slices/authSlice';
 import FormTextField from '../../../common/Form/FormTextField';
+import SettingsSection from '../../../common/SettingsSection';
 import {
   passwordFormSchema,
   profileFormSchema,
@@ -79,107 +72,95 @@ export default function ProfilePage() {
   };
 
   return (
-    <Grid container spacing={2} alignItems="flex-start">
-      <Grid size={{ xs: 12, md: 6 }}>
-        <Card>
-          <CardContent>
-            <Typography variant="h5" sx={{ mb: 2 }}>
-              Your details
-            </Typography>
-            <form noValidate onSubmit={details.handleSubmit(saveDetails)}>
-              <Stack spacing={2}>
-                <FormTextField
-                  name="name"
-                  control={details.control}
-                  label="Name"
-                  required
-                  fullWidth
-                />
-                <FormTextField
-                  name="email"
-                  control={details.control}
-                  label="Email"
-                  type="email"
-                  required
-                  fullWidth
-                  helperText="You sign in with this email, and reset links go to it"
-                />
-                {emailChanging && (
-                  <FormTextField
-                    name="currentPassword"
-                    control={details.control}
-                    label="Current password"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                    fullWidth
-                    helperText="Needed to change your email"
-                  />
-                )}
-              </Stack>
-              <Box sx={{ display: 'flex', justifyContent: 'end', mt: 2 }}>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={details.formState.isSubmitting}
-                >
-                  Save details
-                </Button>
-              </Box>
-            </form>
-          </CardContent>
-        </Card>
-      </Grid>
-      <Grid size={{ xs: 12, md: 6 }}>
-        <Card>
-          <CardContent>
-            <Typography variant="h5" sx={{ mb: 2 }}>
-              Change password
-            </Typography>
-            <form noValidate onSubmit={password.handleSubmit(savePassword)}>
-              <Stack spacing={2}>
-                <FormTextField
-                  name="currentPassword"
-                  control={password.control}
-                  label="Current password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  fullWidth
-                />
-                <FormTextField
-                  name="newPassword"
-                  control={password.control}
-                  label="New password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  fullWidth
-                  helperText="At least 8 characters"
-                />
-                <FormTextField
-                  name="confirmPassword"
-                  control={password.control}
-                  label="Confirm new password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  fullWidth
-                />
-              </Stack>
-              <Box sx={{ display: 'flex', justifyContent: 'end', mt: 2 }}>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={password.formState.isSubmitting}
-                >
-                  Change password
-                </Button>
-              </Box>
-            </form>
-          </CardContent>
-        </Card>
-      </Grid>
-    </Grid>
+    <Stack spacing={2}>
+      <SettingsSection
+        title="Your details"
+        description="You sign in with this email, and password reset links go to it."
+        action={
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={details.formState.isSubmitting}
+          >
+            Save details
+          </Button>
+        }
+        onSubmit={details.handleSubmit(saveDetails)}
+      >
+        <FormTextField
+          name="name"
+          control={details.control}
+          label="Name"
+          required
+          fullWidth
+        />
+        <FormTextField
+          name="email"
+          control={details.control}
+          label="Email"
+          type="email"
+          required
+          fullWidth
+        />
+        {emailChanging && (
+          <FormTextField
+            name="currentPassword"
+            control={details.control}
+            label="Current password"
+            type="password"
+            autoComplete="current-password"
+            required
+            fullWidth
+            helperText="Needed to change your email"
+          />
+        )}
+      </SettingsSection>
+
+      <SettingsSection
+        title="Change password"
+        description="Enter your current password, then the new one twice."
+        action={
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={password.formState.isSubmitting}
+          >
+            Change password
+          </Button>
+        }
+        onSubmit={password.handleSubmit(savePassword)}
+      >
+        <FormTextField
+          name="currentPassword"
+          control={password.control}
+          label="Current password"
+          type="password"
+          autoComplete="current-password"
+          required
+          fullWidth
+        />
+        <Box sx={{ gridColumnStart: 1 }}>
+          <FormTextField
+            name="newPassword"
+            control={password.control}
+            label="New password"
+            type="password"
+            autoComplete="new-password"
+            required
+            fullWidth
+            helperText="At least 8 characters"
+          />
+        </Box>
+        <FormTextField
+          name="confirmPassword"
+          control={password.control}
+          label="Confirm new password"
+          type="password"
+          autoComplete="new-password"
+          required
+          fullWidth
+        />
+      </SettingsSection>
+    </Stack>
   );
 }

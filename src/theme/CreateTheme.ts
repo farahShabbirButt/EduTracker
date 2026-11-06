@@ -95,6 +95,44 @@ const createEducationTrackerTheme = (isDarkMode = false) => {
             transition: `background-color ${motion.medium}, color ${motion.medium}`,
             scrollbarColor: `${c.scrollbar} transparent`,
           },
+          // Toasts follow the theme. Their own colours are set by these variables.
+          '.Toastify': {
+            '--toastify-color-light': c.surface,
+            '--toastify-text-color-light': c.ink,
+            '--toastify-font-family': fonts.body,
+            '--toastify-color-success': c.green,
+            '--toastify-color-error': c.red,
+            '--toastify-color-warning': c.amber,
+            '--toastify-color-info': c.primary,
+            '--toastify-icon-color-success': c.green,
+            '--toastify-icon-color-error': c.red,
+            '--toastify-icon-color-warning': c.amber,
+            '--toastify-icon-color-info': c.primary,
+          },
+          '.Toastify__toast': {
+            minHeight: 56,
+            padding: '12px 14px',
+            border: `1px solid ${c.line}`,
+            borderRadius: radii.medium,
+            boxShadow: shadow.large,
+            fontSize: 14,
+            fontWeight: 600,
+            lineHeight: 1.4,
+          },
+          '.Toastify__close-button': {
+            alignSelf: 'center',
+            color: c.inkMuted,
+            opacity: 1,
+          },
+          // Phones: above the bottom tabs, not on top of them
+          '@media (max-width: 899.95px)': {
+            '.Toastify__toast-container': {
+              bottom: 'calc(96px + env(safe-area-inset-bottom)) !important',
+              left: '16px !important',
+              right: '16px !important',
+              width: 'auto !important',
+            },
+          },
           // Passwords have their own show button, so Edge's second one goes
           'input::-ms-reveal': { display: 'none' },
           '@keyframes studio-rise': {
@@ -209,6 +247,15 @@ const createEducationTrackerTheme = (isDarkMode = false) => {
               borderColor: c.red,
             },
           },
+          // Browsers paint saved logins pale blue, which breaks up the field
+          input: {
+            '&:-webkit-autofill': {
+              WebkitBoxShadow: `0 0 0 100px ${c.surface} inset`,
+              WebkitTextFillColor: c.ink,
+              caretColor: c.ink,
+              borderRadius: 'inherit',
+            },
+          },
         },
       },
 
@@ -231,6 +278,8 @@ const createEducationTrackerTheme = (isDarkMode = false) => {
             borderRadius: radii.medium,
             border: `1px solid ${c.line}`,
             boxShadow: shadow.large,
+            // A long list scrolls, so it can't fill a phone screen
+            maxHeight: 'min(340px, 60vh)',
           },
         },
       },

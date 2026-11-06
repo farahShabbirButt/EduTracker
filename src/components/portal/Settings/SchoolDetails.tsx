@@ -3,12 +3,8 @@ import {
   Alert,
   Box,
   Button,
-  Card,
-  CardContent,
-  CardHeader,
   CircularProgress,
-  Divider,
-  Grid,
+  Stack,
   Typography,
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
@@ -22,6 +18,7 @@ import {
 } from '../../../redux/slices/instituteSlice';
 import { cardColors } from '../../../theme/tokens';
 import FormTextField from '../../../common/Form/FormTextField';
+import SettingsSection from '../../../common/SettingsSection';
 import {
   instituteFormSchema,
   type InstituteFormInput,
@@ -124,179 +121,158 @@ const SchoolDetails = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // No form: saving it blank would overwrite the school's details
+  if (error) return <Alert severity="error">{error}</Alert>;
+
   return (
-    <Grid container spacing={2} alignItems="flex-start">
-      <Grid size={{ xs: 12, lg: 7 }}>
-        <Card>
-          <CardHeader
-            title="School details"
-            subheader="Printed on every result card. The school year start date sets the period on Reports."
+    <form noValidate onSubmit={handleSubmit(onSave)}>
+      <Stack spacing={2}>
+        <SettingsSection
+          title="School details"
+          description="Printed on every result card. The start date sets the months on Reports."
+        >
+          <Box sx={{ gridColumn: '1 / -1' }}>
+            <FormTextField
+              name="name"
+              control={control}
+              label="School Name"
+              required
+              fullWidth
+            />
+          </Box>
+          <Box sx={{ gridColumn: '1 / -1' }}>
+            <FormTextField
+              name="address"
+              control={control}
+              label="Address"
+              required
+              fullWidth
+            />
+          </Box>
+          <FormTextField
+            name="phone"
+            control={control}
+            label="Phone"
+            required
+            fullWidth
+            inputProps={{ inputMode: 'tel' }}
           />
-          <Divider />
-          <CardContent>
-            {loading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
-                <CircularProgress />
-              </Box>
-            ) : error ? (
-              // No form: saving it blank would overwrite the school's details
-              <Alert severity="error">{error}</Alert>
-            ) : (
-              <form noValidate onSubmit={handleSubmit(onSave)}>
-                <Grid container spacing={2}>
-                  <Grid size={12}>
-                    <FormTextField
-                      name="name"
-                      control={control}
-                      label="School Name"
-                      required
-                      fullWidth
-                    />
-                  </Grid>
-                  <Grid size={12}>
-                    <FormTextField
-                      name="address"
-                      control={control}
-                      label="Address"
-                      required
-                      fullWidth
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <FormTextField
-                      name="phone"
-                      control={control}
-                      label="Phone"
-                      required
-                      fullWidth
-                      inputProps={{ inputMode: 'tel' }}
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <FormTextField
-                      name="schoolYearStartDate"
-                      control={control}
-                      type="date"
-                      label="School Year Start Date"
-                      required
-                      fullWidth
-                      slotProps={{ inputLabel: { shrink: true } }}
-                    />
-                  </Grid>
-                  <Grid size={12}>
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                      School Logo
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      {logo && (
-                        <Box
-                          component="img"
-                          src={logo}
-                          alt="School logo"
-                          sx={{
-                            maxWidth: 80,
-                            maxHeight: 56,
-                            objectFit: 'contain',
-                          }}
-                        />
-                      )}
-                      <Button component="label" variant="outlined">
-                        {logo ? 'Change Logo' : 'Upload Logo'}
-                        <input
-                          hidden
-                          type="file"
-                          accept={LOGO_TYPES.join(',')}
-                          onChange={handleLogoPicked}
-                        />
-                      </Button>
-                      {logo && (
-                        <Button
-                          color="error"
-                          onClick={() => setValue('logo', null)}
-                        >
-                          Remove
-                        </Button>
-                      )}
-                    </Box>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ display: 'block', mt: 1 }}
-                    >
-                      PNG, JPG or WEBP, up to 500 KB. Printed on every result
-                      card.
-                    </Typography>
-                  </Grid>
-                </Grid>
-                <Box sx={{ display: 'flex', mt: 2, justifyContent: 'end' }}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={isSubmitting}
-                  >
-                    Save changes
-                  </Button>
-                </Box>
-              </form>
+          <FormTextField
+            name="schoolYearStartDate"
+            control={control}
+            type="date"
+            label="School Year Start Date"
+            required
+            fullWidth
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
+        </SettingsSection>
+
+        <SettingsSection
+          title="School logo"
+          description="PNG, JPG or WEBP, up to 500 KB. Printed beside the school name."
+        >
+          <Box
+            sx={{
+              gridColumn: '1 / -1',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: 2,
+            }}
+          >
+            {logo && (
+              <Box
+                component="img"
+                src={logo}
+                alt="School logo"
+                sx={{ maxWidth: 96, maxHeight: 64, objectFit: 'contain' }}
+              />
             )}
-          </CardContent>
-        </Card>
-      </Grid>
-      <Grid size={{ xs: 12, lg: 5 }}>
-        <Card>
-          <CardHeader title="Card preview" />
-          <Divider />
-          <CardContent>
-            <Box
-              sx={(theme) => ({
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                gap: 1.5,
-                p: 2,
-                textAlign: logo ? 'left' : 'center',
-                bgcolor: cardColors.paper,
-                color: cardColors.ink,
-                borderRadius: `${theme.studio.radii.medium}px`,
-                boxShadow: theme.studio.shadows.medium,
-              })}
-            >
-              {logo && (
-                <Box
-                  component="img"
-                  src={logo}
-                  alt=""
-                  sx={{
-                    flex: 'none',
-                    maxWidth: 60,
-                    maxHeight: 44,
-                    objectFit: 'contain',
-                  }}
-                />
-              )}
-              <Box sx={{ minWidth: 0 }}>
-                <Typography
-                  sx={(theme) => ({
-                    fontFamily: theme.studio.fonts.display,
-                    fontWeight: 600,
-                    fontSize: 16,
-                    color: cardColors.accent,
-                  })}
-                >
-                  {preview.name || 'Your school name'}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{ color: 'inherit', overflowWrap: 'anywhere' }}
-                >
-                  {[preview.address, preview.phone].filter(Boolean).join(', ')}
-                </Typography>
-              </Box>
+            <Button component="label" variant="outlined">
+              {logo ? 'Change logo' : 'Upload logo'}
+              <input
+                hidden
+                type="file"
+                accept={LOGO_TYPES.join(',')}
+                onChange={handleLogoPicked}
+              />
+            </Button>
+            {logo && (
+              <Button color="error" onClick={() => setValue('logo', null)}>
+                Remove
+              </Button>
+            )}
+          </Box>
+        </SettingsSection>
+
+        <SettingsSection
+          title="Card preview"
+          description="The top of every result card, as it will print."
+          action={
+            <Button type="submit" variant="contained" disabled={isSubmitting}>
+              Save changes
+            </Button>
+          }
+        >
+          <Box
+            sx={(theme) => ({
+              gridColumn: '1 / -1',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: 1.5,
+              p: 2.5,
+              textAlign: logo ? 'left' : 'center',
+              bgcolor: cardColors.paper,
+              color: cardColors.ink,
+              border: `1px solid ${theme.palette.divider}`,
+              borderRadius: `${theme.studio.radii.medium}px`,
+            })}
+          >
+            {logo && (
+              <Box
+                component="img"
+                src={logo}
+                alt=""
+                sx={{
+                  flex: 'none',
+                  maxWidth: 72,
+                  maxHeight: 52,
+                  objectFit: 'contain',
+                }}
+              />
+            )}
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                sx={(theme) => ({
+                  fontFamily: theme.studio.fonts.display,
+                  fontWeight: 600,
+                  fontSize: 18,
+                  color: cardColors.accent,
+                })}
+              >
+                {preview.name || 'Your school name'}
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{ color: 'inherit', overflowWrap: 'anywhere' }}
+              >
+                {[preview.address, preview.phone].filter(Boolean).join(', ')}
+              </Typography>
             </Box>
-          </CardContent>
-        </Card>
-      </Grid>
-    </Grid>
+          </Box>
+        </SettingsSection>
+      </Stack>
+    </form>
   );
 };
 

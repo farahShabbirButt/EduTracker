@@ -114,36 +114,40 @@ const Sidebar = () => {
         </Fade>
       </Box>
 
-      <ButtonBase
-        onClick={toggle}
-        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        aria-expanded={!collapsed}
-        sx={(theme) => ({
-          flex: 'none',
-          justifyContent: 'flex-start',
-          gap: 1.5,
-          height: 36,
-          mt: 1,
-          pl: 2,
-          color: 'inherit',
-          fontSize: 13,
-          fontWeight: 600,
-          borderRadius: `${theme.studio.radii.small}px`,
-          transition: `background-color ${theme.studio.motion.medium}`,
-          '&:hover': {
-            bgcolor: theme.palette.studio.sidebarHover,
-            color: theme.palette.studio.sidebarInkStrong,
-          },
-          '& svg': {
-            fontSize: 18,
-            transform: collapsed ? 'rotate(180deg)' : 'none',
-            transition: `transform ${theme.studio.motion.slow} ${theme.studio.motion.ease}`,
-          },
-        })}
+      {/* Same size and place open or closed, directly under the logo */}
+      <Tooltip
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        placement="right"
       >
-        <ChevronLeftIcon />
-        <Fade collapsed={collapsed}>Collapse</Fade>
-      </ButtonBase>
+        <ButtonBase
+          onClick={toggle}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-expanded={!collapsed}
+          sx={(theme) => ({
+            flex: 'none',
+            alignSelf: 'flex-start',
+            width: 36,
+            height: 32,
+            mt: 1,
+            ml: 0.75,
+            color: 'inherit',
+            bgcolor: theme.palette.studio.sidebarHover,
+            borderRadius: `${theme.studio.radii.small}px`,
+            transition: `background-color ${theme.studio.motion.medium}`,
+            '&:hover': {
+              bgcolor: theme.palette.studio.sidebarLine,
+              color: theme.palette.studio.sidebarInkStrong,
+            },
+            '& svg': {
+              fontSize: 18,
+              transform: collapsed ? 'rotate(180deg)' : 'none',
+              transition: `transform ${theme.studio.motion.slow} ${theme.studio.motion.ease}`,
+            },
+          })}
+        >
+          <ChevronLeftIcon />
+        </ButtonBase>
+      </Tooltip>
 
       <Box
         component="nav"
