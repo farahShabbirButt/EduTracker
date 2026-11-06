@@ -39,6 +39,12 @@ export const lightColors = {
   pill: '#FFFFFF',
   pillInk: '#2E2A9C',
   hero: '#4338CA',
+  // Printed paper stays white in every theme
+  paper: '#FFFFFF',
+  paperInk: '#000000',
+  paperLine: '#DDDDEE',
+  paperAccent: '#4338CA',
+  stamp: '#0F7A55',
   scrollbar: '#C9C7DE',
   shadowColor: '30, 26, 99',
 };

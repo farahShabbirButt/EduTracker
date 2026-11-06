@@ -59,5 +59,7 @@ export const AUTH_ROUTES = {
   LOGOUT: '/auth/logout',
   ME: '/auth/me',
   FORGOT_PASSWORD: '/auth/forgot-password',
+  UPDATE_PROFILE: '/auth/profile',
+  CHANGE_PASSWORD: '/auth/password',
   RESET_PASSWORD: '/auth/reset-password',
 };

@@ -44,7 +44,7 @@ export default function ForgotPasswordForm() {
           underline="hover"
           alignSelf="center"
         >
-          Back to login
+          Back to sign in
         </Link>
       </Stack>
     );
@@ -52,13 +52,22 @@ export default function ForgotPasswordForm() {
 
   return (
     <Box component="form" noValidate onSubmit={handleSubmit}>
-      <Stack spacing={2}>
+      <Stack spacing={2.5}>
         <Box>
-          <Typography variant="h5" sx={{ mb: 0.5, color: 'heading.primary' }}>
-            Forgot password
+          <Typography
+            component="h1"
+            sx={(theme) => ({
+              mb: 0.5,
+              fontFamily: theme.studio.fonts.display,
+              fontSize: 36,
+              fontWeight: 600,
+              lineHeight: 1.15,
+            })}
+          >
+            Reset your password
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Enter your email to receive a reset link
+            Enter your email and we'll send you a reset link.
           </Typography>
         </Box>
 
@@ -87,7 +96,7 @@ export default function ForgotPasswordForm() {
           underline="hover"
           alignSelf="center"
         >
-          Back to login
+          Back to sign in
         </Link>
       </Stack>
     </Box>

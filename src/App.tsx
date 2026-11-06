@@ -10,6 +10,7 @@ import ForgotPasswordForm from './components/auth/ForgotPassword';
 import ResetPasswordForm from './components/auth/ResetPassword';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import PortalLayout from './layout/PortalLayout';
+import LandingPage from './components/public/LandingPage';
 import StudentsManagement from './components/portal/Students/StudentsManagement';
 import SubjectsManagement from './components/portal/Subjects/SubjectsManagement';
 import MarksPage from './components/portal/MonthlyData/MarksPage';
@@ -52,7 +53,16 @@ function App() {
   return (
     <Box sx={{ height: '100%' }}>
       <Routes>
-        <Route path={routes.home} element={<h1>Education Tracker System</h1>} />
+        <Route
+          path={routes.home}
+          element={
+            status === 'authenticated' ? (
+              <Navigate to={routes.portal.dashboard} replace />
+            ) : (
+              <LandingPage />
+            )
+          }
+        />
 
         {/* Auth Module */}
         <Route
@@ -78,10 +88,6 @@ function App() {
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route element={<PortalLayout />}>
-            <Route
-              index
-              element={<Navigate to={routes.portal.dashboard} replace />}
-            />
             <Route
               path={routes.portal.dashboard}
               element={<div>Dashboard</div>}

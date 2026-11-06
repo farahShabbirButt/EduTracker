@@ -7,7 +7,7 @@ export type AppInfoConfig = {
 };
 
 export const appInfo: AppInfoConfig = {
-  appName: 'Edu Tracker',
+  appName: 'EduTracker',
   tagline: 'Track • Test • Report.',
   centerName: 'Farrukh Academy of Science',
   supportEmail: '',
