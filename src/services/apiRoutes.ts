@@ -36,15 +36,18 @@ export const TEST_ROUTES = {
 };
 
 export const SCORE_ROUTES = {
-  ENTER_MARKS: '/student-score/entry',
-  GET_MARKS_ENTRY: (query: string) => `/student-score/entry?${query}`,
+  GET_GRID: (query: string) => `/student-score/grid?${query}`,
+  SAVE_GRID: '/student-score/grid',
 };
 
 export const CONDUCT_ROUTES = {
-  GET_CONDUCT: (studentExternalId: string, query: string) =>
-    `/conduct/student/${studentExternalId}?${query}`,
-  SAVE_CONDUCT: (studentExternalId: string) =>
-    `/conduct/student/${studentExternalId}`,
+  CLASS: (classExternalId: string, query: string) =>
+    `/conduct/class/${classExternalId}?${query}`,
+  SAVE_CLASS: (classExternalId: string) => `/conduct/class/${classExternalId}`,
+};
+
+export const DASHBOARD_ROUTES = {
+  GET: '/dashboard',
 };
 
 export const INSTITUTE_ROUTES = { GET: '/institute', SAVE: '/institute' };
@@ -59,5 +62,7 @@ export const AUTH_ROUTES = {
   LOGOUT: '/auth/logout',
   ME: '/auth/me',
   FORGOT_PASSWORD: '/auth/forgot-password',
+  UPDATE_PROFILE: '/auth/profile',
+  CHANGE_PASSWORD: '/auth/password',
   RESET_PASSWORD: '/auth/reset-password',
 };

@@ -42,7 +42,7 @@ export const ThemeContextProvider = ({ children }: { children: ReactNode }) => {
   return (
     <ThemeContext value={{ isDarkMode, toogleTheme }}>
       <ThemeProvider theme={theme}>
-        <CssBaseline />
+        <CssBaseline enableColorScheme />
         {children}
       </ThemeProvider>
     </ThemeContext>

@@ -2,17 +2,14 @@ import * as React from 'react';
 import {
   Box,
   Button,
-  Card,
-  CardContent,
-  CardHeader,
-  Divider,
   MenuItem,
   Stack,
+  Tab,
+  Tabs,
   TextField,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import SettingsIcon from '@mui/icons-material/Settings';
-import LinkIcon from '@mui/icons-material/Link';
+import { useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import type { AppDispatch, RootState } from '../../../redux/store';
@@ -27,9 +24,10 @@ import type { ApiSubject, SubjectFormValues } from './@types/subject.d';
 import SubjectListing from './Partial/SubjectsListing';
 import SubjectDialog from './Partial/SubjectsDialog';
 import AssignToClasses from './Partial/AssignToClasses';
-import GradeBoundariesDialog from './Partial/GradeBoundries';
+import GradeBoundaries from './Partial/GradeBoundries';
 import DeleteDialog from '../../../common/Dialogs/DeleteDialog/DeleteDialog';
 import LoadError from '../../../common/LoadError';
+import LabeledSelect from '../../../common/Form/LabeledSelect';
 
 export default function SubjectsManagement() {
   const dispatch = useDispatch<AppDispatch>();
@@ -47,7 +45,8 @@ export default function SubjectsManagement() {
     null
   );
   const [openAssign, setOpenAssign] = React.useState(false);
-  const [openBoundaries, setOpenBoundaries] = React.useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get('tab') === 'grades' ? 'grades' : 'subjects';
 
   React.useEffect(() => {
     dispatch(fetchSubjects());
@@ -117,77 +116,87 @@ export default function SubjectsManagement() {
 
   return (
     <Stack spacing={2}>
-      <Card>
-        <CardHeader
-          title="Subject Management"
-          subheader="Add subjects, set max marks, and grade boundaries"
-        />
-        <Divider />
-        <CardContent>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={2}
-            alignItems="center"
-          >
+      <Stack
+        direction={{ xs: 'column', lg: 'row' }}
+        spacing={1.5}
+        alignItems={{ lg: 'flex-end' }}
+      >
+        <Tabs
+          value={tab}
+          onChange={(_, value) =>
+            setSearchParams(value === 'grades' ? { tab: 'grades' } : {})
+          }
+        >
+          <Tab value="subjects" label="Subjects" />
+          <Tab value="grades" label="Grade boundaries" />
+        </Tabs>
+        <Box sx={{ flex: 1 }} />
+        {tab === 'subjects' && (
+          <>
             <TextField
-              label="Search subjects"
+              size="small"
+              placeholder="Search subjects"
+              sx={{ '& .MuiInputBase-root': { minHeight: 44 } }}
+              slotProps={{ htmlInput: { 'aria-label': 'Search subjects' } }}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              sx={{ minWidth: 260 }}
             />
-            <TextField
-              select
-              label="Filter by Class"
+            <LabeledSelect
+              label="Class"
+              placeholder="All classes"
               value={classFilter}
-              onChange={(e) => setClassFilter(e.target.value)}
-              sx={{ minWidth: 200 }}
+              minWidth={170}
+              options={Object.fromEntries(
+                classes.map((c) => [c.externalId, c.name])
+              )}
+              onChange={setClassFilter}
             >
-              <MenuItem value="">All Classes</MenuItem>
+              <MenuItem value="">All classes</MenuItem>
               {classes.map((c) => (
                 <MenuItem key={c.externalId} value={c.externalId}>
                   {c.name}
                 </MenuItem>
               ))}
-            </TextField>
-            <Box sx={{ flex: 1 }} />
+            </LabeledSelect>
             <Button
-              startIcon={<LinkIcon />}
               variant="outlined"
+              sx={{ flex: 'none' }}
               onClick={() => setOpenAssign(true)}
             >
-              Assign to Classes
-            </Button>
-            <Button
-              startIcon={<SettingsIcon />}
-              variant="outlined"
-              onClick={() => setOpenBoundaries(true)}
-            >
-              Grade Boundaries
+              Assign to classes
             </Button>
             <Button
               startIcon={<AddIcon />}
               variant="contained"
+              sx={{ flex: 'none' }}
               onClick={openCreate}
             >
-              Add Subject
+              Add subject
             </Button>
-          </Stack>
-        </CardContent>
-      </Card>
+          </>
+        )}
+      </Stack>
 
-      {loadError && (
-        <LoadError
-          message={loadError}
-          onRetry={() => dispatch(fetchSubjects())}
-        />
+      {tab === 'grades' ? (
+        <GradeBoundaries />
+      ) : (
+        <>
+          {loadError && (
+            <LoadError
+              message={loadError}
+              onRetry={() => dispatch(fetchSubjects())}
+            />
+          )}
+          {!loadError && (
+            <SubjectListing
+              rows={filtered}
+              loading={loading}
+              onEdit={openEdit}
+              onDelete={askDelete}
+            />
+          )}
+        </>
       )}
-
-      <SubjectListing
-        rows={filtered}
-        loading={loading}
-        onEdit={openEdit}
-        onDelete={askDelete}
-      />
 
       {/* Create/Edit */}
       <SubjectDialog
@@ -217,12 +226,6 @@ export default function SubjectsManagement() {
         open={openAssign}
         onClose={() => setOpenAssign(false)}
         allSubjects={subjects}
-      />
-
-      {/* Boundaries */}
-      <GradeBoundariesDialog
-        open={openBoundaries}
-        onClose={() => setOpenBoundaries(false)}
       />
     </Stack>
   );

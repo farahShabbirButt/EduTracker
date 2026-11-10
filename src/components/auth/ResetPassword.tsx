@@ -1,18 +1,11 @@
 import { useState } from 'react';
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Stack,
-  Link,
-  Alert,
-} from '@mui/material';
+import { Box, Button, Typography, Stack, Link, Alert } from '@mui/material';
 import {
   Link as RouterLink,
   useNavigate,
   useSearchParams,
 } from 'react-router-dom';
+import PasswordTextField from '../../common/Form/PasswordTextField';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
 import { routes } from '../../config/routes';
@@ -69,21 +62,31 @@ export default function ResetPasswordForm() {
 
   return (
     <Box component="form" noValidate onSubmit={handleSubmit}>
-      <Stack spacing={2}>
+      <Stack spacing={2.5}>
         <Box>
-          <Typography variant="h5" sx={{ mb: 0.5, color: 'heading.primary' }}>
-            Reset password
+          <Typography
+            component="h1"
+            sx={(theme) => ({
+              mb: 0.5,
+              fontFamily: theme.studio.fonts.display,
+              fontSize: 36,
+              fontWeight: 600,
+              lineHeight: 1.15,
+            })}
+          >
+            Set a new password
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Create a new password for your account
+            Choose a new password for your account.
           </Typography>
         </Box>
 
         {error && <Alert severity="error">{error}</Alert>}
 
-        <TextField
+        <PasswordTextField
           label="New password"
           type="password"
+          autoComplete="new-password"
           fullWidth
           required
           value={values.password}
@@ -91,9 +94,10 @@ export default function ResetPasswordForm() {
             setValues((s) => ({ ...s, password: e.target.value }))
           }
         />
-        <TextField
+        <PasswordTextField
           label="Confirm password"
           type="password"
+          autoComplete="new-password"
           fullWidth
           required
           value={values.confirm}
@@ -115,7 +119,7 @@ export default function ResetPasswordForm() {
           fullWidth
           disabled={submitting}
         >
-          {submitting ? 'Setting…' : 'Set new password'}
+          {submitting ? 'Saving…' : 'Save new password'}
         </Button>
 
         <Link
@@ -124,7 +128,7 @@ export default function ResetPasswordForm() {
           underline="hover"
           alignSelf="center"
         >
-          Back to login
+          Back to sign in
         </Link>
       </Stack>
     </Box>

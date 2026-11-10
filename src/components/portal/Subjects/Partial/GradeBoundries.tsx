@@ -1,9 +1,9 @@
-// src/components/subjects/GradeBoundariesDialog.tsx
 import * as React from 'react';
 import {
   Alert,
+  Box,
   Button,
-  Dialog,
+  Card,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -12,6 +12,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -19,8 +20,8 @@ import {
   Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import type { AppDispatch, RootState } from '../../../../redux/store';
@@ -32,11 +33,9 @@ import {
 } from '../../../../redux/slices/gradeSlice';
 import type { ApiGradeScale, GradeScaleFormValues } from '../@types/subject.d';
 import DeleteDialog from '../../../../common/Dialogs/DeleteDialog/DeleteDialog';
-
-type Props = {
-  open: boolean;
-  onClose: () => void;
-};
+import EmptyState from '../../../../common/EmptyState';
+import FormPanel from '../../../../common/FormPanel';
+import LoadError from '../../../../common/LoadError';
 
 const emptyForm: GradeScaleFormValues = {
   grade: '',
@@ -45,13 +44,14 @@ const emptyForm: GradeScaleFormValues = {
   remarks: '',
 };
 
-export default function GradeBoundariesDialog({ open, onClose }: Props) {
+export default function GradeBoundaries() {
   const dispatch = useDispatch<AppDispatch>();
   const { gradeScales, loading, loadError } = useSelector(
     (state: RootState) => state.grades
   );
 
   const [formOpen, setFormOpen] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
   const [editing, setEditing] = React.useState<ApiGradeScale | null>(null);
   const [form, setForm] = React.useState<GradeScaleFormValues>(emptyForm);
   const [formError, setFormError] = React.useState<string | null>(null);
@@ -159,11 +159,13 @@ export default function GradeBoundariesDialog({ open, onClose }: Props) {
       grade: candidate.grade.trim(),
       remarks: candidate.remarks.trim(),
     };
+    setSubmitting(true);
     const result = editing
       ? await dispatch(
           editGradeScale({ externalId: editing.externalId, data: payload })
         )
       : await dispatch(addGradeScale(payload));
+    setSubmitting(false);
 
     if (
       addGradeScale.fulfilled.match(result) ||
@@ -191,107 +193,119 @@ export default function GradeBoundariesDialog({ open, onClose }: Props) {
   };
 
   return (
-    <>
-      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-        <DialogTitle>Grade Boundaries</DialogTitle>
-        <DialogContent>
-          {loadError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {loadError}
-            </Alert>
-          )}
-          {gaps.length > 0 && (
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              These percentages have no band: {gaps.join(', ')}. A student there
-              gets the band below.
-            </Alert>
-          )}
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+    <Stack spacing={2}>
+      {loadError && (
+        <LoadError
+          message={loadError}
+          onRetry={() => dispatch(fetchGradeScales())}
+        />
+      )}
+      {gaps.length > 0 && (
+        <Alert severity="warning">
+          These percentages have no band: {gaps.join(', ')}. A student there
+          gets the band below.
+        </Alert>
+      )}
+
+      <Card sx={{ p: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 1,
+            mb: 1,
+          }}
+        >
+          <Typography variant="body2">
             The lowest band prints FAIL on the card.
           </Typography>
+          <Button
+            startIcon={<AddIcon />}
+            variant="contained"
+            sx={{ flex: 'none' }}
+            onClick={openAddForm}
+          >
+            Add band
+          </Button>
+        </Box>
+        <TableContainer>
           <Table size="small">
             <TableHead>
               <TableRow>
                 <TableCell>Grade</TableCell>
-                <TableCell>Min %</TableCell>
-                <TableCell>Max %</TableCell>
-                <TableCell>Remarks</TableCell>
+                <TableCell>From</TableCell>
+                <TableCell>To</TableCell>
+                <TableCell>Remarks on the card</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {sorted.map((row) => (
                 <TableRow key={row.externalId}>
-                  <TableCell>{row.grade}</TableCell>
-                  <TableCell>{row.minPercentage}</TableCell>
-                  <TableCell>{row.maxPercentage}</TableCell>
-                  <TableCell>
-                    <Tooltip title={row.remarks}>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          maxWidth: 280,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {row.remarks}
-                      </Typography>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell align="right">
+                  <TableCell sx={{ fontWeight: 700 }}>{row.grade}</TableCell>
+                  <TableCell>{row.minPercentage}%</TableCell>
+                  <TableCell>{row.maxPercentage}%</TableCell>
+                  <TableCell sx={{ minWidth: 220 }}>{row.remarks}</TableCell>
+                  <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                     <Tooltip title="Edit">
                       <IconButton
-                        size="small"
+                        aria-label={`Edit ${row.grade}`}
                         onClick={() => openEditForm(row)}
                       >
-                        <EditIcon fontSize="small" />
+                        <EditOutlinedIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Delete">
                       <IconButton
-                        size="small"
                         color="error"
+                        aria-label={`Delete ${row.grade}`}
                         onClick={() => setDeleteTarget(row)}
                       >
-                        <DeleteIcon fontSize="small" />
+                        <DeleteOutlineOutlinedIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
-              {!loading && !loadError && sorted.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5}>
-                    <Typography variant="body2" color="text.secondary">
-                      No grade bands yet.
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              )}
             </TableBody>
           </Table>
+        </TableContainer>
+        {!loading && !loadError && sorted.length === 0 && (
+          <EmptyState
+            title="No grade bands yet"
+            detail="Cards need grade bands to work out each grade."
+          />
+        )}
+      </Card>
 
-          {formOpen && (
-            <Stack spacing={2} sx={{ mt: 3 }}>
-              <Typography variant="subtitle2">
-                {editing ? 'Edit Grade Band' : 'Add Grade Band'}
-              </Typography>
+      <FormPanel open={formOpen} label="Grade band">
+        <form
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+        >
+          <DialogTitle>
+            {editing ? 'Edit grade band' : 'Add grade band'}
+          </DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} sx={{ mt: 1 }}>
               {formError && <Alert severity="error">{formError}</Alert>}
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <TextField
+                label="Grade"
+                slotProps={{ htmlInput: { maxLength: 5 } }}
+                value={form.grade}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, grade: e.target.value }))
+                }
+              />
+              <Stack direction="row" spacing={2}>
                 <TextField
-                  label="Grade"
-                  slotProps={{ htmlInput: { maxLength: 5 } }}
-                  value={form.grade}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, grade: e.target.value }))
-                  }
-                  sx={{ width: { sm: 140 } }}
-                />
-                <TextField
-                  label="Min %"
+                  label="From %"
                   type="number"
+                  fullWidth
                   value={form.minPercentage}
                   onChange={(e) =>
                     setForm((prev) => ({
@@ -299,12 +313,12 @@ export default function GradeBoundariesDialog({ open, onClose }: Props) {
                       minPercentage: Number(e.target.value),
                     }))
                   }
-                  inputProps={{ min: 0, max: 100 }}
-                  sx={{ width: { sm: 140 } }}
+                  slotProps={{ htmlInput: { min: 0, max: 100 } }}
                 />
                 <TextField
-                  label="Max %"
+                  label="To %"
                   type="number"
+                  fullWidth
                   value={form.maxPercentage}
                   onChange={(e) =>
                     setForm((prev) => ({
@@ -312,43 +326,29 @@ export default function GradeBoundariesDialog({ open, onClose }: Props) {
                       maxPercentage: Number(e.target.value),
                     }))
                   }
-                  inputProps={{ min: 0, max: 100 }}
-                  sx={{ width: { sm: 140 } }}
+                  slotProps={{ htmlInput: { min: 0, max: 100 } }}
                 />
               </Stack>
               <TextField
-                label="Remarks"
+                label="Remarks on the card"
                 value={form.remarks}
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, remarks: e.target.value }))
                 }
                 multiline
-                minRows={2}
+                minRows={3}
                 fullWidth
               />
-              <Stack direction="row" spacing={1} justifyContent="flex-end">
-                <Button onClick={closeForm}>Cancel</Button>
-                <Button variant="contained" onClick={handleSubmit}>
-                  {editing ? 'Save Changes' : 'Add'}
-                </Button>
-              </Stack>
             </Stack>
-          )}
-
-          {!formOpen && (
-            <Button
-              startIcon={<AddIcon />}
-              onClick={openAddForm}
-              sx={{ mt: 2 }}
-            >
-              Add Grade Band
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeForm}>Cancel</Button>
+            <Button type="submit" variant="contained" disabled={submitting}>
+              {editing ? 'Save changes' : 'Add band'}
             </Button>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose}>Close</Button>
-        </DialogActions>
-      </Dialog>
+          </DialogActions>
+        </form>
+      </FormPanel>
 
       <DeleteDialog
         open={!!deleteTarget}
@@ -357,6 +357,6 @@ export default function GradeBoundariesDialog({ open, onClose }: Props) {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
       />
-    </>
+    </Stack>
   );
 }

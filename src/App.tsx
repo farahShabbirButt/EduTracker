@@ -3,18 +3,21 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Box, CircularProgress } from '@mui/material';
 import './App.css';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import ThemeShowcase from './theme/ThemeShowcase';
 import { routes } from './config/routes';
-import ResultCardPreview from './components/testers/ResultCardPreview';
 import AuthLayout from './layout/AuthLayout';
 import LoginForm from './components/auth/Login';
 import ForgotPasswordForm from './components/auth/ForgotPassword';
 import ResetPasswordForm from './components/auth/ResetPassword';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import PortalLayout from './layout/PortalLayout';
+import LandingPage from './components/public/LandingPage';
 import StudentsManagement from './components/portal/Students/StudentsManagement';
 import SubjectsManagement from './components/portal/Subjects/SubjectsManagement';
-import MonthlyDataManagement from './components/portal/MonthlyData/MonthlyDataManagement';
+import MarksPage from './components/portal/MonthlyData/MarksPage';
+import TestsPage from './components/portal/MonthlyData/TestsPage';
+import ConductPage from './components/portal/MonthlyData/ConductPage';
+import DashboardPage from './components/portal/Dashboard/DashboardPage';
+import ProfilePage from './components/portal/Profile/ProfilePage';
 import ReportsManagement from './components/portal/Reports/ReportsManagement';
 import SchoolDetails from './components/portal/Settings/SchoolDetails';
 import ClassesManagement from './components/portal/Classes/ClassesManagement';
@@ -51,9 +54,16 @@ function App() {
   return (
     <Box sx={{ height: '100%' }}>
       <Routes>
-        <Route path={routes.home} element={<h1>Education Tracker System</h1>} />
-        <Route path="theme" element={<ThemeShowcase />} />
-        <Route path="preview" element={<ResultCardPreview />} />
+        <Route
+          path={routes.home}
+          element={
+            status === 'authenticated' ? (
+              <Navigate to={routes.portal.dashboard} replace />
+            ) : (
+              <LandingPage />
+            )
+          }
+        />
 
         {/* Auth Module */}
         <Route
@@ -79,14 +89,7 @@ function App() {
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route element={<PortalLayout />}>
-            <Route
-              index
-              element={<Navigate to={routes.portal.dashboard} replace />}
-            />
-            <Route
-              path={routes.portal.dashboard}
-              element={<div>Dashboard</div>}
-            />
+            <Route path={routes.portal.dashboard} element={<DashboardPage />} />
             <Route
               path={routes.portal.student}
               element={<StudentsManagement />}
@@ -99,10 +102,10 @@ function App() {
               path={routes.portal.classes}
               element={<ClassesManagement />}
             />
-            <Route
-              path={routes.portal.monthlyData}
-              element={<MonthlyDataManagement />}
-            />
+            <Route path={routes.portal.marks} element={<MarksPage />} />
+            <Route path={routes.portal.tests} element={<TestsPage />} />
+            <Route path={routes.portal.conduct} element={<ConductPage />} />
+            <Route path={routes.portal.profile} element={<ProfilePage />} />
             <Route
               path={routes.portal.reports}
               element={<ReportsManagement />}
@@ -110,6 +113,7 @@ function App() {
             <Route path={routes.portal.settings} element={<SchoolDetails />} />
           </Route>
         </Route>
+        <Route path="*" element={<Navigate to={routes.home} replace />} />
       </Routes>
     </Box>
   );

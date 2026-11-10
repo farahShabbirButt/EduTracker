@@ -9,6 +9,7 @@ import {
   Alert,
 } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import PasswordTextField from '../../common/Form/PasswordTextField';
 import { useDispatch, useSelector } from 'react-redux';
 import { routes } from '../../config/routes';
 import type { AppDispatch, RootState } from '../../redux/store';
@@ -19,8 +20,7 @@ export default function LoginForm() {
   const [values, setValues] = useState({ email: '', password: '' });
 
   const dispatch = useDispatch<AppDispatch>();
-  const { status, error } = useSelector((state: RootState) => state.auth);
-  const submitting = status === 'loading';
+  const { signingIn, error } = useSelector((state: RootState) => state.auth);
 
   // Clear a stale error when the screen mounts, so a previous failure does not
   // greet the user on their next visit.
@@ -38,13 +38,22 @@ export default function LoginForm() {
 
   return (
     <Box component="form" noValidate onSubmit={handleSubmit}>
-      <Stack spacing={2}>
+      <Stack spacing={2.5}>
         <Box>
-          <Typography variant="h5" sx={{ mb: 0.5, color: 'heading.primary' }}>
+          <Typography
+            component="h1"
+            sx={(theme) => ({
+              mb: 0.5,
+              fontFamily: theme.studio.fonts.display,
+              fontSize: 36,
+              fontWeight: 600,
+              lineHeight: 1.15,
+            })}
+          >
             Welcome back
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Sign in to your admin account
+            Sign in to enter marks and print result cards.
           </Typography>
         </Box>
 
@@ -53,14 +62,16 @@ export default function LoginForm() {
         <TextField
           label="Email"
           type="email"
+          autoComplete="username"
           fullWidth
           required
           value={values.email}
           onChange={(e) => setValues((s) => ({ ...s, email: e.target.value }))}
         />
-        <TextField
+        <PasswordTextField
           label="Password"
           type="password"
+          autoComplete="current-password"
           fullWidth
           required
           value={values.password}
@@ -90,9 +101,9 @@ export default function LoginForm() {
           variant="contained"
           color="primary"
           fullWidth
-          disabled={submitting}
+          disabled={signingIn}
         >
-          {submitting ? 'Signing in…' : 'Sign in'}
+          {signingIn ? 'Signing in…' : 'Sign in'}
         </Button>
       </Stack>
     </Box>

@@ -38,7 +38,7 @@ const DeleteDialog = ({
   return (
     <Dialog open={open} onClose={onCancel}>
       <DialogTitle>{title ?? 'Delete Confirmation'}</DialogTitle>
-      <DialogContent dividers>
+      <DialogContent>
         <Typography variant="body2" color="text.secondary">
           {subtitle ?? 'This action cannot be undone.'}
         </Typography>

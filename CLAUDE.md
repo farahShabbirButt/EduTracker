@@ -15,12 +15,11 @@ This is the EduTracker frontend SPA (Vite + React 19 + TS + MUI v7 + Redux Toolk
 
 - `apiClient` sends no `Authorization` header on purpose — auth is an httpOnly cookie the browser attaches via `credentials: 'include'`. There is no token for JS to read; session state comes from `GET /auth/me` (`fetchMe` in `App.tsx`).
 - DataGrid tables use `getRowId={(row) => row.externalId}` — API responses don't include the internal numeric `id`, so a grid without `getRowId` breaks.
-- Routes `/theme` and `/preview` are dev-only previews (theme tokens, `ResultCardPreview`). Leave them out of any route guard or sitemap logic.
 - `main.tsx` imports `print.css` purely for the side effect (`react-to-print` copies it into the print frame for result cards). Don't remove it.
 
 ## Theme
 
-The MUI theme defines custom palette keys (e.g. `theme.palette.background.accent`, `theme.palette.background.primary`) declared in `theme/theme.ts` / `theme/CreateTheme.ts`. Check what already exists before adding new color usages — and if you add a new key, extend the MUI module augmentation in the theme files, not inline.
+All colours, fonts, corners and motion live in `theme/tokens.ts`; `theme/CreateTheme.ts` builds the MUI theme from it, and screens read the theme, never hex values. The MUI theme defines custom palette keys (e.g. `theme.palette.background.accent`, `theme.palette.background.primary`) declared in `theme/theme.ts` / `theme/CreateTheme.ts`. Check what already exists before adding new color usages — and if you add a new key, extend the MUI module augmentation in the theme files, not inline.
 
 ## Surfacing API messages
 

@@ -2,7 +2,6 @@ import {
   Alert,
   Button,
   Checkbox,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -20,6 +19,7 @@ import type { Student, StudentFormValues } from '../@types/student.d';
 import type { RootState, AppDispatch } from '../../../../redux/store';
 import { fetchClasses } from '../../../../redux/slices/classSlice';
 import { fetchSubjects } from '../../../../redux/slices/subjectSlice';
+import FormPanel from '../../../../common/FormPanel';
 import FormTextField from '../../../../common/Form/FormTextField';
 import {
   studentFormSchema,
@@ -35,6 +35,8 @@ interface StudentFormDialogProps {
   onSubmit: (payload: StudentFormValues) => Promise<void> | void;
   mode: 'create' | 'edit';
   initial?: Partial<Student>;
+  // The class a new student starts in
+  defaultClassId?: string;
 }
 
 const StudentModal = ({
@@ -43,6 +45,7 @@ const StudentModal = ({
   onSubmit,
   mode,
   initial,
+  defaultClassId,
 }: StudentFormDialogProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const { classes } = useSelector((state: RootState) => state.classes);
@@ -57,7 +60,7 @@ const StudentModal = ({
     lastName: student?.lastName ?? '',
     fatherName: student?.fatherName ?? '',
     rollNumber: student?.rollNumber ?? '',
-    classId: student?.class?.externalId ?? classes[0]?.externalId ?? '', // Using externalId for class selection
+    classId: student?.class?.externalId ?? defaultClassId ?? '', // Using externalId for class selection
     contactNo: student?.contactNo ?? '',
     email: student?.email ?? '',
     electiveSubjectIds:
@@ -113,7 +116,7 @@ const StudentModal = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <FormPanel open={open} label="Student details">
       <form
         noValidate
         onSubmit={handleSubmit((values) => onSubmit(toPayload(values)))}
@@ -217,7 +220,9 @@ const StudentModal = ({
                 </Typography>
               ) : classElectives.length === 0 ? (
                 <Typography variant="body2" color="text.secondary">
-                  This class has no electives.
+                  {selectedClassId
+                    ? 'This class has no electives.'
+                    : 'Choose a class to see its electives.'}
                 </Typography>
               ) : (
                 <Controller
@@ -265,7 +270,7 @@ const StudentModal = ({
           </Button>
         </DialogActions>
       </form>
-    </Dialog>
+    </FormPanel>
   );
 };
 export default StudentModal;

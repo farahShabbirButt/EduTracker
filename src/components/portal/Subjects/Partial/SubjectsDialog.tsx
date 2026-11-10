@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import {
   Button,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -12,6 +11,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ApiSubject, SubjectFormValues } from '../@types/subject.d';
 import { SubjectType } from '../../../../@types/global.d';
+import FormPanel from '../../../../common/FormPanel';
 import FormTextField from '../../../../common/Form/FormTextField';
 import {
   subjectFormSchema,
@@ -58,21 +58,21 @@ export default function SubjectDialog({
   }, [initial, open, reset]);
 
   return (
-    <Dialog open={open} onClose={onCancel} maxWidth="xs" fullWidth>
+    <FormPanel open={open} label="Subject details">
       <form noValidate onSubmit={handleSubmit((values) => onSave(values))}>
-        <DialogTitle>{isEdit ? 'Edit Subject' : 'Add Subject'}</DialogTitle>
+        <DialogTitle>{isEdit ? 'Edit subject' : 'Add subject'}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <FormTextField
               name="name"
               control={control}
               autoFocus
-              label="Subject Name"
+              label="Subject name"
             />
             <FormTextField
               name="maxMarks"
               control={control}
-              label="Max Marks"
+              label="Max marks"
               type="number"
               helperText="e.g., 100"
               inputProps={{ min: 1 }}
@@ -81,7 +81,7 @@ export default function SubjectDialog({
               name="subjectType"
               control={control}
               select
-              label="Subject Type"
+              label="Subject type"
             >
               <MenuItem value={SubjectType.COMPULSORY}>Compulsory</MenuItem>
               <MenuItem value={SubjectType.ELECTIVE}>Elective</MenuItem>
@@ -91,10 +91,10 @@ export default function SubjectDialog({
         <DialogActions>
           <Button onClick={onCancel}>Cancel</Button>
           <Button type="submit" variant="contained" disabled={isSubmitting}>
-            {isEdit ? 'Save Changes' : 'Create'}
+            {isEdit ? 'Save changes' : 'Add subject'}
           </Button>
         </DialogActions>
       </form>
-    </Dialog>
+    </FormPanel>
   );
 }

@@ -6,52 +6,53 @@ import {
 } from '../../services/apiClient';
 import { SCORE_ROUTES } from '../../services/apiRoutes';
 
-// Real `GET /student-score/entry` response shape (see edutracker-backend
-// StudentScoreService.getMarksEntryStudents). `test.maxMarks` is THIS
-// subject's per-test maximum, not the test's overall totalMarks.
-export type MarksEntryStudent = {
+export type GridCell = {
+  marksObtained: number | null;
+  // False when the student doesn't take the subject: there's no cell to fill
+  editable: boolean;
+  // Counts towards what's still missing
+  owed: boolean;
+};
+
+export type GridStudent = {
   externalId: string;
   firstName: string;
-  lastName: string;
-  fatherName: string;
+  lastName: string | null;
   rollNumber: string;
-  marksObtained: number | null;
-  // On the sheet only for a saved mark: they've left this class or subject
-  leftSubject: boolean;
+  // Holds a saved mark but has since moved to another class
+  leftClass: boolean;
+  cells: Record<string, GridCell>;
 };
 
-export type MarksEntryData = {
+export type GridSubject = {
+  externalId: string;
+  name: string;
+  maxMarks: number;
+};
+
+export type MarksGrid = {
   class: { externalId: string; name: string };
-  test: {
-    externalId: string;
-    name: string;
-    totalMarks: number;
-    maxMarks: number;
-    month: number;
-    year: number;
-  };
-  subject: { externalId: string; name: string };
-  students: MarksEntryStudent[];
+  test: { externalId: string; name: string; month: number; year: number };
+  subjects: GridSubject[];
+  students: GridStudent[];
 };
 
-export type MarksEntryQuery = {
+export type MarksGridQuery = {
   classExternalId: string;
   testExternalId: string;
-  subjectExternalId: string;
 };
 
-// null clears a saved mark
-export type ScoreItem = {
-  studentExternalId: string;
-  marksObtained: number | null;
-};
-
-export type SaveMarksEntryPayload = MarksEntryQuery & {
-  scores: ScoreItem[];
+export type SaveMarksGridPayload = MarksGridQuery & {
+  // null clears a saved mark
+  marks: {
+    studentExternalId: string;
+    subjectExternalId: string;
+    marksObtained: number | null;
+  }[];
 };
 
 interface ScoreState {
-  marksEntry: MarksEntryData | null;
+  grid: MarksGrid | null;
   loading: boolean;
   // Latest fetch only: an aborted or superseded one must not touch the state
   requestId: string | null;
@@ -60,44 +61,37 @@ interface ScoreState {
 }
 
 const initialState: ScoreState = {
-  marksEntry: null,
+  grid: null,
   loading: false,
   requestId: null,
   saving: false,
   error: null,
 };
 
-export const fetchMarksEntry = createAsyncThunk(
-  'scores/fetchEntry',
-  async (params: MarksEntryQuery, { signal, rejectWithValue }) => {
+export const fetchMarksGrid = createAsyncThunk(
+  'scores/fetchGrid',
+  async (params: MarksGridQuery, { signal, rejectWithValue }) => {
     try {
       const query = new URLSearchParams(params).toString();
-      const response = await apiClient.get<
-        ApiResponse<'marksEntry', MarksEntryData>
-      >(SCORE_ROUTES.GET_MARKS_ENTRY(query), { signal });
+      const response = await apiClient.get<ApiResponse<'marksGrid', MarksGrid>>(
+        SCORE_ROUTES.GET_GRID(query),
+        { signal }
+      );
       return response[response.keyName];
     } catch (error) {
-      return rejectWithValue(
-        messageFrom(error, 'Failed to load students and marks')
-      );
+      return rejectWithValue(messageFrom(error, 'Failed to load the marks'));
     }
   }
 );
 
-export const saveMarksEntry = createAsyncThunk(
-  'scores/save',
-  async (payload: SaveMarksEntryPayload, { rejectWithValue }) => {
+export const saveMarksGrid = createAsyncThunk(
+  'scores/saveGrid',
+  async (payload: SaveMarksGridPayload, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post<
-        ApiResponse<'studentScores', { skippedStudentsCount: number }>
-      >(SCORE_ROUTES.ENTER_MARKS, payload);
-      return {
-        skippedStudentsCount: response[response.keyName].skippedStudentsCount,
-        message:
-          response.userMessage ||
-          response.message ||
-          'Marks saved successfully',
-      };
+      const response = await apiClient.put<
+        ApiResponse<'studentScores', { saved: number }>
+      >(SCORE_ROUTES.SAVE_GRID, payload);
+      return response.userMessage || response.message || 'Marks saved';
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to save marks'));
     }
@@ -108,48 +102,42 @@ const scoreSlice = createSlice({
   name: 'scores',
   initialState,
   reducers: {
-    // Clears the loaded entry (and its error) when the user changes class/test
-    // selection, so a stale student list never lingers under a new selection.
-    clearMarksEntry: (state) => {
-      state.marksEntry = null;
+    // A stale grid must never linger under a new selection
+    clearMarksGrid: (state) => {
+      state.grid = null;
       state.error = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchMarksEntry.pending, (state, action) => {
+      .addCase(fetchMarksGrid.pending, (state, action) => {
         state.loading = true;
         state.requestId = action.meta.requestId;
         state.error = null;
       })
-      .addCase(fetchMarksEntry.fulfilled, (state, action) => {
+      .addCase(fetchMarksGrid.fulfilled, (state, action) => {
         if (state.requestId !== action.meta.requestId) return;
         state.loading = false;
-        state.marksEntry = action.payload;
+        state.grid = action.payload;
       })
-      .addCase(fetchMarksEntry.rejected, (state, action) => {
+      .addCase(fetchMarksGrid.rejected, (state, action) => {
         if (state.requestId !== action.meta.requestId) return;
         state.loading = false;
-        // An aborted request (superseded by a newer selection) isn't a real
-        // failure — don't flash an error banner for it.
         if (action.meta.aborted) return;
-        state.marksEntry = null;
-        state.error =
-          (action.payload as string) || 'Failed to load students and marks';
+        state.grid = null;
+        state.error = (action.payload as string) || 'Failed to load the marks';
       })
-      .addCase(saveMarksEntry.pending, (state) => {
+      .addCase(saveMarksGrid.pending, (state) => {
         state.saving = true;
-        state.error = null;
       })
-      .addCase(saveMarksEntry.fulfilled, (state) => {
+      .addCase(saveMarksGrid.fulfilled, (state) => {
         state.saving = false;
       })
-      .addCase(saveMarksEntry.rejected, (state, action) => {
+      .addCase(saveMarksGrid.rejected, (state) => {
         state.saving = false;
-        state.error = (action.payload as string) || 'Failed to save marks';
       });
   },
 });
 
-export const { clearMarksEntry } = scoreSlice.actions;
+export const { clearMarksGrid } = scoreSlice.actions;
 export default scoreSlice.reducer;

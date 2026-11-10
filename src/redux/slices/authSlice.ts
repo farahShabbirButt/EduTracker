@@ -8,8 +8,10 @@ import {
 import { AUTH_ROUTES } from '../../services/apiRoutes';
 import type {
   IAuthUser,
+  IChangePasswordPayload,
   ILoginPayload,
   IResetPasswordPayload,
+  IUpdateProfilePayload,
 } from '../../@types/auth.d';
 
 export type AuthStatus =
@@ -21,12 +23,16 @@ export type AuthStatus =
 interface AuthState {
   user: IAuthUser | null;
   status: AuthStatus;
+  // Separate from status: App swaps the whole screen for a spinner while that is
+  // 'loading', which would wipe the login form.
+  signingIn: boolean;
   error: string | null;
 }
 
 const initialState: AuthState = {
   user: null,
   status: 'idle',
+  signingIn: false,
   error: null,
 };
 
@@ -103,6 +109,39 @@ export const resetPassword = createAsyncThunk(
   }
 );
 
+export const updateProfile = createAsyncThunk(
+  'auth/updateProfile',
+  async (payload: IUpdateProfilePayload, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.put<ApiResponse<'user', IAuthUser>>(
+        AUTH_ROUTES.UPDATE_PROFILE,
+        payload
+      );
+      return {
+        user: response[response.keyName],
+        message: response.message || 'Your details are saved',
+      };
+    } catch (error) {
+      return rejectWithValue(messageFrom(error, 'Failed to save your details'));
+    }
+  }
+);
+
+export const changePassword = createAsyncThunk(
+  'auth/changePassword',
+  async (payload: IChangePasswordPayload, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.put<ApiMessage>(
+        AUTH_ROUTES.CHANGE_PASSWORD,
+        payload
+      );
+      return response.message || 'Password changed';
+    } catch (error) {
+      return rejectWithValue(messageFrom(error, 'Failed to change password'));
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -119,16 +158,21 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.user = action.payload.user;
+      })
       .addCase(login.pending, (state) => {
-        state.status = 'loading';
+        state.signingIn = true;
         state.error = null;
       })
       .addCase(login.fulfilled, (state, action) => {
+        state.signingIn = false;
         state.status = 'authenticated';
         state.user = action.payload;
         state.error = null;
       })
       .addCase(login.rejected, (state, action) => {
+        state.signingIn = false;
         state.status = 'unauthenticated';
         state.user = null;
         state.error = (action.payload as string) || 'Failed to log in';

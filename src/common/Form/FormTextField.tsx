@@ -1,6 +1,7 @@
 import { TextField } from '@mui/material';
 import type { TextFieldProps } from '@mui/material';
 import { Controller } from 'react-hook-form';
+import PasswordTextField from './PasswordTextField';
 import type { Control, FieldPath, FieldValues } from 'react-hook-form';
 
 type FormTextFieldProps<T extends FieldValues> = Omit<
@@ -19,12 +20,15 @@ export default function FormTextField<T extends FieldValues>({
   helperText,
   ...textFieldProps
 }: FormTextFieldProps<T>) {
+  const Field =
+    textFieldProps.type === 'password' ? PasswordTextField : TextField;
+
   return (
     <Controller
       name={name}
       control={control}
       render={({ field: { ref, value, ...field }, fieldState }) => (
-        <TextField
+        <Field
           {...textFieldProps}
           {...field}
           value={value ?? ''}

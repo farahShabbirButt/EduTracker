@@ -21,6 +21,7 @@ import gradeReducer, { fetchGradeScales } from './slices/gradeSlice';
 import testReducer, { fetchTestSubjects, fetchTests } from './slices/testSlice';
 import scoreReducer from './slices/scoreSlice';
 import conductReducer from './slices/conductSlice';
+import dashboardReducer, { fetchDashboard } from './slices/dashboardSlice';
 import reportReducer from './slices/reportSlice';
 import instituteReducer, { fetchInstitute } from './slices/instituteSlice';
 
@@ -36,6 +37,7 @@ const rootReducer = combineReducers({
   scores: scoreReducer,
   conduct: conductReducer,
   report: reportReducer,
+  dashboard: dashboardReducer,
 });
 
 // A failed list load would otherwise look like an empty list. Marks entry,
@@ -47,7 +49,8 @@ const isFailedListLoad = isRejected(
   fetchGradeScales,
   fetchInstitute,
   fetchTests,
-  fetchTestSubjects
+  fetchTestSubjects,
+  fetchDashboard
 );
 
 const listLoadErrors: Middleware = () => (next) => (action) => {

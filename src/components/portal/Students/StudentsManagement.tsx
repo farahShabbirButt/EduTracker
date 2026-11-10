@@ -1,21 +1,26 @@
 import {
+  Avatar,
   Box,
   Typography,
   Button,
+  Card,
+  Chip,
+  IconButton,
   TextField,
   MenuItem,
   Tooltip,
-  Chip,
+  Skeleton,
   Stack,
   InputAdornment,
-  Card,
-  CardHeader,
-  Divider,
-  CardContent,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import LoadError from '../../../common/LoadError';
-import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+import EmptyState from '../../../common/EmptyState';
+import FilterBar from '../../../common/FilterBar';
+import LabeledSelect from '../../../common/Form/LabeledSelect';
+import type { GridColDef } from '@mui/x-data-grid';
 
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -30,20 +35,33 @@ import {
 import { fetchClasses } from '../../../redux/slices/classSlice';
 import type { Student, StudentFormValues } from './@types/student.d';
 import StudentModal from './Partials/StudentModal';
+import { useSearchParams } from 'react-router-dom';
 import DeleteDialog from '../../../common/Dialogs/DeleteDialog/DeleteDialog';
 
-import {
-  MoreVert as MenuIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Search as SearchIcon,
-  Add as AddIcon,
-  LibraryBooks as SubjectIcon,
-} from '@mui/icons-material';
-import DropdownMenu from '../../../common/DropdownMenu/DropdownMenu';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import SearchIcon from '@mui/icons-material/Search';
+
+// Rows shown at a time on a phone
+const PHONE_PAGE = 20;
+
+// Numbers in order: 2 before 10, 9th before 10th
+const registerOrder = (a: unknown, b: unknown) =>
+  String(a).localeCompare(String(b), undefined, { numeric: true });
+
+const NoStudents = () => (
+  <EmptyState
+    title="No students to show"
+    detail="Add a student, or change the search and class filter."
+  />
+);
 
 const StudentsManagement = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const theme = useTheme();
+  const phone = useMediaQuery(theme.breakpoints.down('md'));
+  const [shown, setShown] = useState(PHONE_PAGE);
   const {
     students: rows,
     loading,
@@ -58,6 +76,9 @@ const StudentsManagement = () => {
   const [rowToDelete, setRowToDelete] = useState<Student | null>(null);
 
   // filters
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Set when someone picks a student in the header's search
+  const picked = searchParams.get('student');
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState<string>('All');
   // Load data on mount
@@ -73,6 +94,9 @@ const StudentsManagement = () => {
 
   // derived rows based on filters
   const filtered = useMemo(() => {
+    if (picked) {
+      return rows.filter((r) => r.externalId === picked);
+    }
     let filteredRows = rows;
     if (classFilter !== 'All') {
       filteredRows = filteredRows.filter(
@@ -97,7 +121,7 @@ const StudentsManagement = () => {
       });
     }
     return filteredRows;
-  }, [rows, search, classFilter]);
+  }, [rows, search, classFilter, picked]);
 
   const openCreate = () => {
     setDialogMode('create');
@@ -145,180 +169,183 @@ const StudentsManagement = () => {
     setRowToDelete(null);
   };
 
-  const columns = useMemo<GridColDef<Student>[]>(
+  const fullName = (row: Student) =>
+    [row.firstName, row.lastName].filter(Boolean).join(' ');
+
+  const actions = (row: Student) => (
+    <>
+      <Tooltip title="Edit">
+        <IconButton
+          aria-label={`Edit ${fullName(row)}`}
+          onClick={() => openEdit(row)}
+        >
+          <EditOutlinedIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Delete">
+        <IconButton
+          color="error"
+          aria-label={`Delete ${fullName(row)}`}
+          onClick={() => askDelete(row)}
+        >
+          <DeleteOutlineOutlinedIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+    </>
+  );
+
+  const nameCell = (row: Student) => (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
+      <Avatar
+        sx={(theme) => ({
+          width: 36,
+          height: 36,
+          fontSize: 13,
+          fontWeight: 800,
+          bgcolor: 'background.accent',
+          color: theme.palette.studio.tintInk,
+        })}
+      >
+        {row.firstName.charAt(0).toUpperCase()}
+      </Avatar>
+      <Typography noWrap sx={{ fontWeight: 700 }}>
+        {fullName(row)}
+      </Typography>
+    </Box>
+  );
+
+  const columns: GridColDef<Student>[] = useMemo(
     () => [
       {
         field: 'name',
-        headerName: 'Student Name',
-        flex: 1.2,
+        headerName: 'Student',
+        flex: 1.3,
         minWidth: 200,
-        sortable: false,
-        renderCell: ({ row }) => {
-          return (
-            <span>
-              {row.firstName} {row.lastName ?? ''}
-            </span>
-          );
-        },
+        display: 'flex',
+        valueGetter: (_value, row) => fullName(row),
+        renderCell: ({ row }) => nameCell(row),
       },
       {
         field: 'fatherName',
-        headerName: 'Father Name',
-        flex: 1.2,
-        minWidth: 200,
-        sortable: false,
+        headerName: 'Father',
+        flex: 1,
+        minWidth: 150,
       },
       {
         field: 'rollNumber',
-        headerName: 'Roll #',
-        width: 120,
+        headerName: 'Roll',
+        width: 110,
+        sortComparator: registerOrder,
       },
       {
         field: 'class',
         headerName: 'Class',
-        width: 110,
+        width: 130,
+        sortComparator: registerOrder,
         valueGetter: (_value, row) => row.class?.name || '-',
+      },
+      {
+        field: 'subjects',
+        headerName: 'Subjects',
+        width: 100,
+        valueGetter: (_value, row) => row.subjects?.length ?? 0,
       },
       {
         field: 'contactNo',
         headerName: 'Contact',
         flex: 1,
-        minWidth: 200,
-        sortable: false,
-        align: 'center',
-        renderCell: (params: GridRenderCellParams<any, Student>) => (
-          <Typography variant="caption" color="text.secondary">
-            {params.row.contactNo ? params.row.contactNo : '-'}
-          </Typography>
-        ),
+        minWidth: 140,
+        valueGetter: (_value, row) => row.contactNo || '-',
       },
       {
         field: 'email',
         headerName: 'Email',
-        flex: 1,
-        minWidth: 200,
-        sortable: false,
-        renderCell: (params: GridRenderCellParams<any, Student>) => (
-          <Typography variant="caption" color="text.secondary">
-            {params.row.email ? params.row.email : '---'}
-          </Typography>
-        ),
-      },
-      {
-        field: 'subjects',
-        headerName: 'Subjects',
-        width: 120,
-        renderCell: (p) => (
-          <Chip
-            label={`${p.row.subjects?.length ?? 0}`}
-            size="small"
-            color={(p.row.subjects?.length ?? 0) > 0 ? 'primary' : 'default'}
-            variant="outlined"
-          />
-        ),
+        flex: 1.2,
+        minWidth: 170,
+        valueGetter: (_value, row) => row.email || '-',
       },
       {
         field: 'actions',
         headerName: 'Actions',
-        width: 130,
+        width: 110,
+        display: 'flex',
         sortable: false,
         filterable: false,
-        align: 'center',
-        renderCell: (params) => {
-          const row = params.row;
-          return (
-            <DropdownMenu icon={<MenuIcon fontSize="small" />}>
-              <Tooltip title="Assign Subjects (coming soon)">
-                <MenuItem>
-                  <SubjectIcon fontSize="small" sx={{ mr: 1 }} />
-                  Assign Subjects
-                </MenuItem>
-              </Tooltip>
-              <Tooltip title="Edit">
-                <MenuItem onClick={() => openEdit(row)}>
-                  <EditIcon fontSize="small" sx={{ mr: 1 }} />
-                  Edit
-                </MenuItem>
-              </Tooltip>
-
-              <Tooltip title="Delete">
-                <MenuItem onClick={() => askDelete(row)}>
-                  <DeleteIcon fontSize="small" color="error" sx={{ mr: 1 }} />
-                  Delete
-                </MenuItem>
-              </Tooltip>
-            </DropdownMenu>
-          );
-        },
+        disableColumnMenu: true,
+        align: 'right',
+        renderCell: ({ row }) => actions(row),
       },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
   return (
-    <Box
-      sx={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 3 }}
-    >
-      {/* Header Section */}
-      <Card>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={2}
-          alignItems="center"
-          justifyContent="space-between"
+    <Stack spacing={2}>
+      <FilterBar>
+        <TextField
+          size="small"
+          placeholder="Search name, father, roll, phone or email"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setShown(PHONE_PAGE);
+            if (picked) setSearchParams({});
+          }}
+          sx={{
+            flex: 1,
+            minWidth: 220,
+            '& .MuiInputBase-root': { minHeight: 44 },
+          }}
+          slotProps={{
+            htmlInput: { 'aria-label': 'Search students' },
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
+        <LabeledSelect
+          label="Class"
+          value={classFilter}
+          options={{
+            All: 'All classes',
+            ...Object.fromEntries(classes.map((c) => [c.externalId, c.name])),
+          }}
+          onChange={(value) => {
+            setClassFilter(value);
+            setShown(PHONE_PAGE);
+            if (picked) setSearchParams({});
+          }}
         >
-          <CardHeader
-            title="Students Management"
-            subheader="Create, edit and manage student records"
+          <MenuItem value="All">All classes</MenuItem>
+          {classes.map((c) => (
+            <MenuItem key={c.externalId} value={c.externalId}>
+              {c.name}
+            </MenuItem>
+          ))}
+        </LabeledSelect>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={openCreate}
+          sx={{ flex: 'none' }}
+        >
+          Add student
+        </Button>
+      </FilterBar>
+
+      {picked && (
+        <Box>
+          <Chip
+            label="Showing the student you found"
+            onDelete={() => setSearchParams({})}
           />
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            onClick={openCreate}
-          >
-            Add Student
-          </Button>
-        </Stack>
-        <Divider />
-        <CardContent>
-          {/* Actions / Filters */}
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={1.5}
-            sx={{ mb: 2 }}
-          >
-            <TextField
-              placeholder="Search name, father name, roll #, phone, email"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              fullWidth
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <TextField
-              select
-              label="Class"
-              value={classFilter}
-              onChange={(e) => setClassFilter(e.target.value)}
-              sx={{ width: { xs: '100%', sm: 180 } }}
-            >
-              <MenuItem value="All">All</MenuItem>
-              {classes.map((c) => (
-                <MenuItem key={c.externalId} value={c.externalId}>
-                  {c.name}
-                </MenuItem>
-              ))}
-            </TextField>
-            <Box flex={1} />
-          </Stack>
-        </CardContent>
-      </Card>
+        </Box>
+      )}
 
       {loadError && (
         <LoadError
@@ -327,34 +354,83 @@ const StudentsManagement = () => {
         />
       )}
 
-      {/* Table */}
-      <Box sx={{ flex: 1, minHeight: 0 }}>
-        <DataGrid
-          rows={filtered}
-          columns={columns}
-          loading={loading}
-          getRowId={(row) => row.externalId}
-          disableRowSelectionOnClick
-          pageSizeOptions={[5, 10, 25]}
-          initialState={{
-            pagination: { paginationModel: { pageSize: 10, page: 0 } },
-          }}
-          sx={{
-            border: (theme) => `1px solid ${theme.palette.divider}`,
-            '& .MuiDataGrid-columnHeaders': {
-              bgcolor: 'background.secondary',
-            },
-          }}
-        />
-      </Box>
+      {loadError ? null : phone ? (
+        <Card sx={{ px: 2, py: 0.5 }}>
+          {filtered.slice(0, shown).map((row, index) => (
+            <Box
+              key={row.externalId}
+              sx={{ py: 1.5, borderTop: index ? 1 : 0, borderColor: 'divider' }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
+              >
+                <Box sx={{ minWidth: 0 }}>{nameCell(row)}</Box>
+                <Box sx={{ flex: 'none' }}>{actions(row)}</Box>
+              </Box>
+              <Typography variant="body2" sx={{ color: 'text.hint', mt: 0.5 }}>
+                {[row.class?.name, `Roll ${row.rollNumber}`, row.contactNo]
+                  .filter(Boolean)
+                  .join(', ')}
+              </Typography>
+            </Box>
+          ))}
+          {loading && filtered.length === 0 && (
+            <Skeleton variant="rounded" height={64} sx={{ my: 1 }} />
+          )}
+          {!loading && !loadError && filtered.length === 0 && (
+            <EmptyState
+              title={rows.length ? 'No students match' : 'No students yet'}
+              detail={
+                rows.length
+                  ? 'Check the spelling or the class filter.'
+                  : 'Add your first student to get started.'
+              }
+            />
+          )}
+          {filtered.length > shown && (
+            <Box sx={{ textAlign: 'center', py: 1.5 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setShown((n) => n + PHONE_PAGE)}
+              >
+                Show more
+              </Button>
+            </Box>
+          )}
+        </Card>
+      ) : (
+        <Card sx={{ px: 1 }}>
+          <DataGrid
+            autoHeight
+            rows={filtered}
+            columns={columns}
+            loading={loading}
+            getRowId={(row) => row.externalId}
+            disableRowSelectionOnClick
+            rowHeight={60}
+            pageSizeOptions={[10, 25, 50]}
+            initialState={{
+              pagination: { paginationModel: { pageSize: 10, page: 0 } },
+            }}
+            slots={{ noRowsOverlay: NoStudents }}
+          />
+        </Card>
+      )}
 
       {/* Create/Edit dialog */}
       <StudentModal
         open={dialogMode === 'create' || dialogMode === 'edit'}
         onClose={() => setDialogMode(null)}
         onSubmit={handleSubmit}
-        mode={dialogMode === 'create' ? 'create' : 'edit'}
+        mode={editingRow ? 'edit' : 'create'}
         initial={editingRow ?? undefined}
+        defaultClassId={classFilter === 'All' ? undefined : classFilter}
       />
 
       {/* Delete confirm */}
@@ -365,7 +441,7 @@ const StudentsManagement = () => {
         onCancel={() => setDialogMode(null)}
         onConfirm={confirmDelete}
       />
-    </Box>
+    </Stack>
   );
 };
 
