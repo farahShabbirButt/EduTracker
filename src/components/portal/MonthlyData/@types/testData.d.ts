@@ -12,8 +12,11 @@ export type ApiTest = {
   externalId: string;
   name: string;
   testType: TestType;
+  // A session test's are taken from its date
   month: number;
   year: number;
+  // YYYY-MM-DD, session tests only
+  testDate: string | null;
   totalMarks: number;
   isActive: boolean;
   createdAt: string;
@@ -38,12 +41,14 @@ export type TestSubjectInput = {
   maxMarks: number;
 };
 
-// POST /test body — subjects: min 1.
+// POST /test body — subjects: min 1. A monthly test sends month and year, a
+// session test its date.
 export type TestFormValues = {
   name: string;
   testType: TestType;
-  month: number;
-  year: number;
+  month?: number;
+  year?: number;
+  testDate?: string;
   totalMarks: number;
   classExternalId: string;
   subjects: TestSubjectInput[];

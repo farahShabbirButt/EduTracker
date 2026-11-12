@@ -110,6 +110,11 @@
 .card-marks tbody tr:nth-child(even) td {
   background: var(--card-stripe);
 }
+/* Earlier session tests added up: bold, with a rule under it before the range */
+.card-marks tbody tr.card-summary-row td {
+  font-weight: 700;
+  border-bottom: 2px solid var(--card-rule);
+}
 .card-marks tbody tr.card-total td {
   background: var(--card-tint);
   font-weight: 800;

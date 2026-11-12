@@ -1,18 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
-  Avatar,
   Box,
   Button,
   Card,
   Checkbox,
   Chip,
   CircularProgress,
+  FormControlLabel,
   MenuItem,
   Skeleton,
   Stack,
+  Tab,
+  Tabs,
   Typography,
 } from '@mui/material';
+import { useSearchParams } from 'react-router-dom';
 import PrintOutlinedIcon from '@mui/icons-material/PrintOutlined';
 import { useDispatch, useSelector } from 'react-redux';
 import { useReactToPrint } from 'react-to-print';
@@ -20,6 +23,7 @@ import { toast } from 'react-toastify';
 import type { AppDispatch, RootState } from '../../../redux/store';
 import { fetchClasses } from '../../../redux/slices/classSlice';
 import { fetchStudents } from '../../../redux/slices/studentSlice';
+import { fetchTests } from '../../../redux/slices/testSlice';
 import {
   clearCards,
   fetchCards,
@@ -28,10 +32,38 @@ import {
 import { MonthList } from '../../../config/constants';
 import EmptyState from '../../../common/EmptyState';
 import LabeledSelect from '../../../common/Form/LabeledSelect';
+import StudentAvatar from '../../../common/StudentAvatar';
 import LoadError from '../../../common/LoadError';
+import { dayLabel } from '../../../common/testWhen';
 import ReportPreviewModal from './Partials/ReportPreviewModal';
 import { ResultCard } from './ResultCard';
-import type { IReportCard, IReportPeriod } from './@types/reportCard.d';
+import type {
+  IReportCard,
+  IReportPeriod,
+  IReportRequest,
+} from './@types/reportCard.d';
+import type { ApiTest } from '../MonthlyData/@types/testData.d';
+
+type SessionRange = {
+  schoolYear?: number;
+  from: string;
+  to: string;
+  // Earlier tests of the school year, added up as the card's first row
+  earlierAsRow: boolean;
+};
+const NO_RANGE: SessionRange = { from: '', to: '', earlierAsRow: false };
+
+// The rows a card has room for, as in ResultCard
+const CARD_ROWS = 12;
+
+// The school year a session test falls in, named by the year it starts
+const schoolYearOf = (testDate: string, startMonth: number) => {
+  const year = Number(testDate.slice(0, 4));
+  return Number(testDate.slice(5, 7)) >= startMonth ? year : year - 1;
+};
+
+const schoolYearLabel = (startYear: number, startMonth: number) =>
+  startMonth === 1 ? String(startYear) : `${startYear}–${startYear + 1}`;
 
 // Next year is here because a school year can end in it
 const yearOptions = () =>
@@ -68,6 +100,11 @@ const ReportsManagement = () => {
   const classes = useSelector((state: RootState) => state.classes.classes);
   const students = useSelector((state: RootState) => state.students.students);
   const { cards, failed } = useSelector((state: RootState) => state.report);
+  const allTests = useSelector((state: RootState) => state.tests.tests);
+  const [searchParams, setSearchParams] = useSearchParams();
+  // A card is one or the other, never both
+  const mode: IReportRequest['mode'] =
+    searchParams.get('type') === 'session' ? 'SESSION' : 'MONTHLY';
 
   const startMonth = startDate ? Number(startDate.slice(5, 7)) : 1;
   const [period, setPeriod] = useState(() => schoolYearPeriod(startMonth));
@@ -94,6 +131,7 @@ const ReportsManagement = () => {
   useEffect(() => {
     dispatch(fetchClasses());
     dispatch(fetchStudents());
+    dispatch(fetchTests());
     return () => {
       dispatch(clearCards());
     };
@@ -117,7 +155,56 @@ const ReportsManagement = () => {
   const pickClass = (id: string) => {
     setClassId(id);
     setUnticked([]);
+    setSession(NO_RANGE);
   };
+
+  // Session tests: the class's, in the order they were sat, by school year
+  const sessionTests = useMemo(
+    () =>
+      allTests
+        .filter(
+          (t): t is ApiTest & { testDate: string } =>
+            t.testType === 'SESSION' &&
+            t.class?.externalId === classId &&
+            !!t.testDate
+        )
+        // The list comes newest first; same-day tests keep their order
+        .reverse()
+        .sort((a, b) => a.testDate.localeCompare(b.testDate)),
+    [allTests, classId]
+  );
+  const schoolYears = useMemo(
+    () => [
+      ...new Set(sessionTests.map((t) => schoolYearOf(t.testDate, startMonth))),
+    ],
+    [sessionTests, startMonth]
+  );
+
+  const [session, setSession] = useState(NO_RANGE);
+  // Until picked, the latest school year and all of its tests
+  const schoolYear = session.schoolYear ?? schoolYears[schoolYears.length - 1];
+  const yearTests = sessionTests.filter(
+    (t) => schoolYearOf(t.testDate, startMonth) === schoolYear
+  );
+  const fromAt = Math.max(
+    0,
+    yearTests.findIndex((t) => t.externalId === session.from)
+  );
+  const toAt = session.to
+    ? yearTests.findIndex((t) => t.externalId === session.to)
+    : yearTests.length - 1;
+  const rangeValid = yearTests.length > 0 && toAt >= fromAt;
+  const hasEarlier = fromAt > 0;
+  const earlierAsRow = session.earlierAsRow && hasEarlier;
+  const rowsNeeded = toAt - fromAt + 1 + (earlierAsRow ? 1 : 0);
+
+  const setRange = (change: Partial<SessionRange>) =>
+    setSession((was) => ({ ...was, ...change }));
+
+  const pickMode = (next: IReportRequest['mode']) =>
+    setSearchParams(next === 'SESSION' ? { type: 'session' } : {}, {
+      replace: true,
+    });
 
   const setPeriodField = (field: keyof typeof period, value: number) => {
     periodPicked.current = true;
@@ -136,6 +223,30 @@ const ReportsManagement = () => {
     [period]
   );
 
+  const fromTestId = yearTests[fromAt]?.externalId;
+  const toTestId = yearTests[toAt]?.externalId;
+  const request: IReportRequest | null = useMemo(() => {
+    if (mode === 'MONTHLY') {
+      return periodValid ? { mode, period: reportPeriod } : null;
+    }
+    return rangeValid && fromTestId && toTestId
+      ? {
+          mode,
+          fromTestExternalId: fromTestId,
+          toTestExternalId: toTestId,
+          earlierAsRow,
+        }
+      : null;
+  }, [
+    mode,
+    periodValid,
+    reportPeriod,
+    rangeValid,
+    fromTestId,
+    toTestId,
+    earlierAsRow,
+  ]);
+
   // Register order, whatever order they were ticked
   const ordered = useMemo(
     () =>
@@ -145,10 +256,10 @@ const ReportsManagement = () => {
     [classStudents, unticked]
   );
 
-  // Another period means different cards
+  // Another period or range means different cards
   useEffect(() => {
     dispatch(clearCards());
-  }, [dispatch, reportPeriod]);
+  }, [dispatch, request]);
 
   // Only what isn't loaded yet, so ticking a box doesn't reload the class. Joined
   // into a string so a reloaded student list with the same people changes nothing.
@@ -157,15 +268,12 @@ const ReportsManagement = () => {
     .join();
 
   useEffect(() => {
-    if (!toLoad || !periodValid) return undefined;
-    const request = dispatch(
-      fetchCards({
-        studentExternalIds: toLoad.split(','),
-        period: reportPeriod,
-      })
+    if (!toLoad || !request) return undefined;
+    const loading = dispatch(
+      fetchCards({ studentExternalIds: toLoad.split(','), request })
     );
-    return () => request.abort();
-  }, [dispatch, toLoad, reportPeriod, periodValid]);
+    return () => loading.abort();
+  }, [dispatch, toLoad, request]);
 
   const shown = ordered.flatMap((id) =>
     cards[id] ? [{ id, card: cards[id] }] : []
@@ -173,14 +281,16 @@ const ReportsManagement = () => {
   const printable = shown.filter(({ card }) => card.rows.length > 0);
   const ready = printable.filter(({ card }) => card.missingMarks.length === 0);
   const failedCount = ordered.filter((id) => failed.includes(id)).length;
-  const pending = periodValid ? ordered.length - shown.length - failedCount : 0;
+  const pending = request ? ordered.length - shown.length - failedCount : 0;
 
   const handlePrintAll = () => {
     const skipped = shown.length - printable.length;
     const incomplete = printable.length - ready.length;
 
     if (skipped > 0) {
-      toast.warning(`${skipped} student(s) have no tests in this period`);
+      toast.warning(
+        `${skipped} student(s) have no tests in this ${mode === 'SESSION' ? 'range' : 'period'}`
+      );
     }
     if (incomplete > 0) {
       toast.warning(`${incomplete} card(s) have marks not entered`);
@@ -226,11 +336,47 @@ const ReportsManagement = () => {
     </LabeledSelect>
   );
 
+  const testField = (
+    label: string,
+    value: string | undefined,
+    end: 'from' | 'to'
+  ) => (
+    <LabeledSelect
+      label={label}
+      fill
+      minWidth={0}
+      placeholder="No session tests"
+      disabled={yearTests.length === 0}
+      value={value ?? ''}
+      options={Object.fromEntries(
+        yearTests.map((t) => [
+          t.externalId,
+          `${t.name}, ${dayLabel(t.testDate)}`,
+        ])
+      )}
+      onChange={(id) => setRange({ schoolYear, [end]: id })}
+    >
+      {yearTests.map((t) => (
+        <MenuItem key={t.externalId} value={t.externalId}>
+          {t.name}, {dayLabel(t.testDate)}
+        </MenuItem>
+      ))}
+    </LabeledSelect>
+  );
+
   const anyTicked = ordered.length > 0;
 
   return (
     <Stack spacing={2}>
       <Card sx={{ p: 2.5 }}>
+        <Tabs
+          value={mode}
+          onChange={(_, value) => pickMode(value)}
+          sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+        >
+          <Tab value="MONTHLY" label="Monthly" />
+          <Tab value="SESSION" label="Test session" />
+        </Tabs>
         <Box
           sx={{
             display: 'grid',
@@ -242,7 +388,15 @@ const ReportsManagement = () => {
             gap: 2,
           }}
         >
-          <Box sx={{ gridColumn: { xs: '1 / -1', lg: 'auto' } }}>
+          <Box
+            sx={{
+              gridColumn: {
+                xs: '1 / -1',
+                md: mode === 'SESSION' ? 'auto' : '1 / -1',
+                lg: 'auto',
+              },
+            }}
+          >
             <LabeledSelect
               label="Class"
               fill
@@ -261,14 +415,78 @@ const ReportsManagement = () => {
               ))}
             </LabeledSelect>
           </Box>
-          {monthField('From month', 'fromMonth')}
-          {yearField('From year', 'fromYear')}
-          {monthField('To month', 'toMonth')}
-          {yearField('To year', 'toYear')}
+          {mode === 'MONTHLY' ? (
+            <>
+              {monthField('From month', 'fromMonth')}
+              {yearField('From year', 'fromYear')}
+              {monthField('To month', 'toMonth')}
+              {yearField('To year', 'toYear')}
+            </>
+          ) : (
+            <>
+              <LabeledSelect
+                label="School year"
+                fill
+                minWidth={0}
+                placeholder={classId ? 'No session tests' : 'Choose a class'}
+                disabled={schoolYears.length === 0}
+                value={schoolYear ?? ''}
+                options={Object.fromEntries(
+                  schoolYears.map((y) => [y, schoolYearLabel(y, startMonth)])
+                )}
+                onChange={(value) =>
+                  setSession({ ...NO_RANGE, schoolYear: Number(value) })
+                }
+              >
+                {schoolYears.map((y) => (
+                  <MenuItem key={y} value={y}>
+                    {schoolYearLabel(y, startMonth)}
+                  </MenuItem>
+                ))}
+              </LabeledSelect>
+              {testField('From test', fromTestId, 'from')}
+              {testField('To test', toTestId, 'to')}
+            </>
+          )}
         </Box>
-        {!periodValid && (
+        {mode === 'SESSION' && yearTests.length > 0 && (
+          <FormControlLabel
+            sx={{ mt: 1.5 }}
+            disabled={!hasEarlier}
+            control={
+              <Checkbox
+                checked={earlierAsRow}
+                onChange={(e) => setRange({ earlierAsRow: e.target.checked })}
+              />
+            }
+            label={
+              hasEarlier
+                ? `Show earlier tests as one row (${yearTests[0].name} – ${yearTests[fromAt - 1].name})`
+                : 'Show earlier tests as one row (the range starts at the first test)'
+            }
+          />
+        )}
+        {mode === 'MONTHLY' && !periodValid && (
           <Alert severity="warning" sx={{ mt: 2 }}>
             The To month can't be before the From month.
+          </Alert>
+        )}
+        {mode === 'SESSION' && classId && sessionTests.length === 0 && (
+          <Alert severity="info" sx={{ mt: 2 }}>
+            This class has no session tests yet. Add them on the Tests screen
+            with the type Test session.
+          </Alert>
+        )}
+        {mode === 'SESSION' && yearTests.length > 0 && !rangeValid && (
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            The To test can't be before the From test.
+          </Alert>
+        )}
+        {mode === 'SESSION' && rangeValid && rowsNeeded > CARD_ROWS && (
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            This range needs {rowsNeeded} rows, and a card has room for{' '}
+            {CARD_ROWS}, so it will print on two pages. Pick a shorter range,
+            then print the rest with “Show earlier tests as one row”.
           </Alert>
         )}
       </Card>
@@ -340,8 +558,7 @@ const ReportsManagement = () => {
             .join(' ');
           const ticked = ordered.includes(id);
           const card = ticked ? cards[id] : undefined;
-          const loading =
-            ticked && !card && periodValid && !failed.includes(id);
+          const loading = ticked && !card && !!request && !failed.includes(id);
           const hasTests = !!card && card.rows.length > 0;
 
           return (
@@ -369,19 +586,7 @@ const ReportsManagement = () => {
                   input: { 'aria-label': `Include ${name}` },
                 }}
               />
-              <Avatar
-                sx={(theme) => ({
-                  width: 38,
-                  height: 38,
-                  fontSize: 13,
-                  fontWeight: 800,
-                  bgcolor: 'background.accent',
-                  color: theme.palette.studio.tintInk,
-                  opacity: ticked ? 1 : 0.5,
-                })}
-              >
-                {name.charAt(0).toUpperCase()}
-              </Avatar>
+              <StudentAvatar name={name} size={38} dim={!ticked} />
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography
                   noWrap

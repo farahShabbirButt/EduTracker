@@ -1,7 +1,8 @@
 import { forwardRef } from 'react';
 import type { CSSProperties } from 'react';
-import type { IReportCard, IReportPeriod } from './@types/reportCard.d';
+import type { IReportCard } from './@types/reportCard.d';
 import { MonthList } from '../../../config/constants';
+import { dayLabel } from '../../../common/testWhen';
 import { CONDUCT_RATING_OPTIONS } from '../MonthlyData/@types/conduct.d';
 import { cardColors, fonts } from '../../../theme/tokens';
 
@@ -38,8 +39,21 @@ const conductLabel = (rating: string | null) =>
 const periodMonth = ({ month, year }: { month: number; year: number }) =>
   `${MonthList.find((m) => m.value === month)?.label ?? month} ${year}`;
 
-const periodLabel = (period: IReportPeriod) =>
-  `${periodMonth(period.from)} to ${periodMonth(period.to)}`;
+const periodLabel = (data: IReportCard) =>
+  data.range
+    ? `${data.range.from} to ${data.range.to}`
+    : `${periodMonth(data.period.from)} to ${periodMonth(data.period.to)}`;
+
+// Two tests with one name are told apart by when they were sat
+const rowLabel = (data: IReportCard, row: IReportCard['rows'][number]) => {
+  if (
+    row.summary ||
+    data.rows.filter((r) => r.testName === row.testName).length === 1
+  ) {
+    return row.testName;
+  }
+  return `${row.testName} (${row.testDate ? dayLabel(row.testDate) : periodMonth(row)})`;
+};
 
 export const ResultCard = forwardRef<HTMLDivElement, ResultCardProps>(
   ({ data }, ref) => {
@@ -64,7 +78,7 @@ export const ResultCard = forwardRef<HTMLDivElement, ResultCardProps>(
           </div>
 
           <div className="card-title">{data.title}</div>
-          <div className="card-period">{periodLabel(data.period)}</div>
+          <div className="card-period">{periodLabel(data)}</div>
 
           <div className="card-student">
             <span>STUDENT’S NAME</span>
@@ -91,13 +105,11 @@ export const ResultCard = forwardRef<HTMLDivElement, ResultCardProps>(
             </thead>
             <tbody>
               {data.rows.map((row) => (
-                <tr key={row.testExternalId}>
-                  <td>
-                    {data.rows.filter((r) => r.testName === row.testName)
-                      .length > 1
-                      ? `${row.testName} (${periodMonth(row)})`
-                      : row.testName}
-                  </td>
+                <tr
+                  key={row.testExternalId ?? 'earlier'}
+                  className={row.summary ? 'card-summary-row' : undefined}
+                >
+                  <td>{rowLabel(data, row)}</td>
                   {data.subjects.map((s) => {
                     // No mark entered, or the subject wasn't examined:
                     // blank. A blank and a zero are different facts.

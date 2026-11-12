@@ -49,6 +49,18 @@ export const lightColors = {
   stamp: '#0F7A55',
   scrollbar: '#C9C7DE',
   shadowColor: '30, 26, 99',
+  // Student initials: one pair is picked from the name, so a student keeps
+  // the same colour everywhere. Each ink is readable on its own background.
+  avatars: [
+    { bg: '#ECEBFE', ink: '#3730A3' },
+    { bg: '#F3E8FF', ink: '#6B21A8' },
+    { bg: '#FCE7F3', ink: '#9D174D' },
+    { bg: '#FFE4E6', ink: '#9F1239' },
+    { bg: '#FDF1DC', ink: '#8A4B06' },
+    { bg: '#DDF3EA', ink: '#0B5C40' },
+    { bg: '#D5F5F6', ink: '#115E67' },
+    { bg: '#E2ECFB', ink: '#1E4E9C' },
+  ],
 };
 
 export type ColorTokens = typeof lightColors;
@@ -91,6 +103,16 @@ export const darkColors: ColorTokens = {
   heroGlow: '#453EC4',
   scrollbar: '#3A3863',
   shadowColor: '0, 0, 0',
+  avatars: [
+    { bg: '#2C2A5E', ink: '#CDCBFF' },
+    { bg: '#3B2552', ink: '#E4CCFF' },
+    { bg: '#4A1F38', ink: '#FBC6E2' },
+    { bg: '#4A1F27', ink: '#FFC4CB' },
+    { bg: '#3C2C14', ink: '#F6CC8A' },
+    { bg: '#15392E', ink: '#9BE8CC' },
+    { bg: '#123A3D', ink: '#A2E6EB' },
+    { bg: '#1E2C47', ink: '#B5D0F8' },
+  ],
 };
 
 // The result card. It stays the same in every theme, and these stay legible

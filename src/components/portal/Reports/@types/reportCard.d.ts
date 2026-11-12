@@ -6,11 +6,18 @@ export interface IReportCardSubjectColumn {
   name: string;
 }
 
+export type ReportMode = 'MONTHLY' | 'SESSION';
+
 export interface IReportCardRow {
-  testExternalId: string;
+  // null on the summary row
+  testExternalId: string | null;
   testName: string;
   month: number;
   year: number;
+  // A session test's day, YYYY-MM-DD
+  testDate: string | null;
+  // A session card's earlier tests added up into one row, e.g. "Test 1 – Test 8"
+  summary: boolean;
   // No key: the student wasn't examined in that subject. obtained null: the
   // mark isn't entered yet. Both print blank, never a substituted 0.
   marks: Record<string, { obtained: number | null; max: number }>;
@@ -43,6 +50,17 @@ export interface IReportPeriod {
   to: { month: number; year: number };
 }
 
+// What a card is asked for: monthly tests over months, or one class's session
+// tests from one test to another
+export type IReportRequest =
+  | { mode: 'MONTHLY'; period: IReportPeriod }
+  | {
+      mode: 'SESSION';
+      fromTestExternalId: string;
+      toTestExternalId: string;
+      earlierAsRow: boolean;
+    };
+
 export interface IReportCard {
   institute: {
     name: string;
@@ -56,8 +74,11 @@ export interface IReportCard {
     class: string;
     rollNumber: string;
   };
+  mode: ReportMode;
   title: string;
   period: IReportPeriod;
+  // Session cards: the first and last test, for the period line
+  range: { from: string; to: string } | null;
   // Authoritative column order — never derive columns from a row's `marks`.
   subjects: IReportCardSubjectColumn[];
   rows: IReportCardRow[];

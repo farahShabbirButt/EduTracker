@@ -24,7 +24,8 @@ import {
   saveMarksGrid,
   type MarksGrid,
 } from '../../../redux/slices/scoreSlice';
-import { MonthList } from '../../../config/constants';
+import { testWhen } from '../../../common/testWhen';
+import { TestType } from '../../../@types/global.d';
 import {
   readFromLocalStorage,
   writeToLocalStorage,
@@ -62,6 +63,19 @@ const clearDraft = (testId: string) => {
   }
 };
 
+type MarksType = 'monthly' | 'session';
+const TYPE_LABELS: Record<MarksType, string> = {
+  monthly: 'Monthly',
+  session: 'Test session',
+};
+// In a sentence: "no session tests"
+const TYPE_PLURAL: Record<MarksType, string> = {
+  monthly: 'monthly tests',
+  session: 'session tests',
+};
+const toMarksType = (testType: TestType): MarksType =>
+  testType === TestType.SESSION ? 'session' : 'monthly';
+
 export default function MarksPage() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -69,6 +83,7 @@ export default function MarksPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const classId = searchParams.get('class') ?? '';
   const testId = searchParams.get('test') ?? '';
+  const typeParam = searchParams.get('type');
 
   const classes = useSelector((state: RootState) => state.classes.classes);
   const {
@@ -91,12 +106,24 @@ export default function MarksPage() {
   const [restored, setRestored] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
 
-  const tests = useMemo(
-    () =>
-      allTests.filter(
-        (t) => t.class?.externalId === classId && t.testType === 'MONTHLY'
-      ),
+  // Monthly and session tests both take marks here, newest first
+  const classTests = useMemo(
+    () => allTests.filter((t) => t.class?.externalId === classId),
     [allTests, classId]
+  );
+  // The chosen test decides the type, so a link to a test always shows it.
+  // Otherwise the address, then the class's newest test.
+  const current = classTests.find((t) => t.externalId === testId);
+  const type: MarksType = current
+    ? toMarksType(current.testType)
+    : typeParam === 'monthly' || typeParam === 'session'
+      ? typeParam
+      : classTests[0]
+        ? toMarksType(classTests[0].testType)
+        : 'monthly';
+  const tests = useMemo(
+    () => classTests.filter((t) => toMarksType(t.testType) === type),
+    [classTests, type]
   );
 
   useEffect(() => {
@@ -105,7 +132,7 @@ export default function MarksPage() {
   }, [dispatch]);
 
   // Opens on the newest test, the one most likely to need marks
-  const newest = allTests.find((t) => t.testType === 'MONTHLY');
+  const newest = allTests[0];
   useEffect(() => {
     if (!classId && newest?.class) {
       setSearchParams(
@@ -231,13 +258,21 @@ export default function MarksPage() {
 
   const percent = percentOf(counts.filled, counts.owed);
 
-  const select = (nextClass: string, nextTest: string) => {
+  const select = (nextClass: string, nextTest: string, nextType = type) => {
     confirmLeaving(() => {
-      const next: Record<string, string> = {};
+      const next: Record<string, string> = { type: nextType };
       if (nextClass) next.class = nextClass;
       if (nextTest) next.test = nextTest;
       setSearchParams(next, { replace: true });
     });
+  };
+
+  // A new type opens its newest test in the class
+  const selectType = (nextType: MarksType) => {
+    const newestOfType = classTests.find(
+      (t) => toMarksType(t.testType) === nextType
+    );
+    select(classId, newestOfType?.externalId ?? '', nextType);
   };
 
   const handleSave = async () => {
@@ -279,10 +314,7 @@ export default function MarksPage() {
     classes.map((c) => [c.externalId, c.name])
   );
   const testNames = Object.fromEntries(
-    tests.map((t) => [
-      t.externalId,
-      `${t.name}, ${MonthList.find((m) => m.value === t.month)?.label ?? t.month} ${t.year}`,
-    ])
+    tests.map((t) => [t.externalId, `${t.name}, ${testWhen(t)}`])
   );
 
   return (
@@ -303,9 +335,25 @@ export default function MarksPage() {
           ))}
         </LabeledSelect>
         <LabeledSelect
+          label="Type"
+          value={type}
+          disabled={!classId || saving}
+          minWidth={160}
+          options={TYPE_LABELS}
+          onChange={(value) => selectType(value as MarksType)}
+        >
+          {Object.entries(TYPE_LABELS).map(([value, label]) => (
+            <MenuItem key={value} value={value}>
+              {label}
+            </MenuItem>
+          ))}
+        </LabeledSelect>
+        <LabeledSelect
           label="Test"
           placeholder={
-            tests.length || testsLoading ? 'Choose a test' : 'No tests yet'
+            tests.length || testsLoading
+              ? 'Choose a test'
+              : `No ${TYPE_PLURAL[type]}`
           }
           value={tests.some((t) => t.externalId === testId) ? testId : ''}
           disabled={!classId || saving || tests.length === 0}
@@ -452,9 +500,11 @@ export default function MarksPage() {
             title={
               allTests.length === 0
                 ? 'No tests yet'
-                : tests.length === 0
-                  ? 'This class has no monthly tests yet'
-                  : 'Choose a test'
+                : classTests.length === 0
+                  ? 'This class has no tests yet'
+                  : tests.length === 0
+                    ? `${classNames[classId] ?? 'This class'} has no ${TYPE_PLURAL[type]} yet`
+                    : 'Choose a test'
             }
             detail="Add a test, then enter the whole class here, with every subject on one screen."
             action={
