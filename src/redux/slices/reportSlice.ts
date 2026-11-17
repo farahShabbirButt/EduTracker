@@ -7,11 +7,11 @@ import { apiClient, type ApiResponse } from '../../services/apiClient';
 import { REPORT_ROUTES } from '../../services/apiRoutes';
 import type {
   IReportCard,
-  IReportPeriod,
+  IReportRequest,
 } from '../../components/portal/Reports/@types/reportCard.d';
 
 interface ReportState {
-  // By student, for the period last loaded
+  // By student, for the request last loaded
   cards: Record<string, IReportCard>;
   // Couldn't be loaded. Kept apart so they're retried on request, not forever.
   failed: string[];
@@ -22,19 +22,31 @@ const initialState: ReportState = {
   failed: [],
 };
 
+const toQuery = (request: IReportRequest) =>
+  new URLSearchParams(
+    request.mode === 'MONTHLY'
+      ? {
+          mode: 'MONTHLY',
+          fromMonth: String(request.period.from.month),
+          fromYear: String(request.period.from.year),
+          toMonth: String(request.period.to.month),
+          toYear: String(request.period.to.year),
+        }
+      : {
+          mode: 'SESSION',
+          fromTestExternalId: request.fromTestExternalId,
+          toTestExternalId: request.toTestExternalId,
+          earlierAsRow: String(request.earlierAsRow),
+        }
+  ).toString();
+
 // A period with no data is a normal 200 (rows: [], position: null), not an error.
 const requestCard = async (
   studentExternalId: string,
-  period: IReportPeriod,
+  request: IReportRequest,
   signal: AbortSignal
 ) => {
-  const query = new URLSearchParams({
-    mode: 'MONTHLY',
-    fromMonth: String(period.from.month),
-    fromYear: String(period.from.year),
-    toMonth: String(period.to.month),
-    toYear: String(period.to.year),
-  }).toString();
+  const query = toQuery(request);
   const response = await apiClient.get<ApiResponse<'report', IReportCard>>(
     REPORT_ROUTES.STUDENT_REPORT(studentExternalId, query),
     { signal }
@@ -49,14 +61,14 @@ export const fetchCards = createAsyncThunk(
   async (
     {
       studentExternalIds,
-      period,
-    }: { studentExternalIds: string[]; period: IReportPeriod },
+      request,
+    }: { studentExternalIds: string[]; request: IReportRequest },
     { signal, dispatch }
   ) => {
     for (const studentExternalId of studentExternalIds) {
       if (signal.aborted) return;
       try {
-        const card = await requestCard(studentExternalId, period, signal);
+        const card = await requestCard(studentExternalId, request, signal);
         dispatch(cardLoaded({ studentExternalId, card }));
       } catch {
         if (signal.aborted) return;

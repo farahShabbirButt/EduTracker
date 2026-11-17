@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
+  Button,
+  Chip,
   IconButton,
   Table,
   TableContainer,
@@ -17,21 +19,32 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import type { AppDispatch, RootState } from '../../../../redux/store';
 import { fetchTests, removeTest } from '../../../../redux/slices/testSlice';
-import { MonthList } from '../../../../config/constants';
+import { testWhen } from '../../../../common/testWhen';
 import EmptyState from '../../../../common/EmptyState';
 import { percentOf } from '../../../../common/percent';
 import ProgressBar from '../../../../common/ProgressBar';
 import DeleteDialog from '../../../../common/Dialogs/DeleteDialog/DeleteDialog';
 import LoadError from '../../../../common/LoadError';
 import type { ApiTest } from '../@types/testData.d';
+import type { TestType } from '../../../../@types/global';
+
+// null shows every class or type
+export type TestFilter = { classId: string | null; testType: TestType | null };
 
 // Folded into the test's own cell on phones
 const onlyWide = { display: { xs: 'none', sm: 'table-cell' } };
 
+const typeLabel = (t: ApiTest) =>
+  t.testType === 'SESSION' ? 'Test session' : 'Monthly';
+
 export default function TestListTable({
+  filter,
   onEditTest,
+  onClearFilter,
 }: {
+  filter: TestFilter;
   onEditTest: (externalId: string) => void;
+  onClearFilter: () => void;
 }) {
   const dispatch = useDispatch<AppDispatch>();
   const { tests, loading, loadError } = useSelector(
@@ -39,12 +52,20 @@ export default function TestListTable({
   );
   const [deleteTarget, setDeleteTarget] = useState<ApiTest | null>(null);
 
+  const { classId, testType } = filter;
+  const shown = useMemo(
+    () =>
+      tests.filter(
+        (t) =>
+          (!classId || t.class?.externalId === classId) &&
+          (!testType || t.testType === testType)
+      ),
+    [tests, classId, testType]
+  );
+
   useEffect(() => {
     dispatch(fetchTests());
   }, [dispatch]);
-
-  const monthLabel = (month: number) =>
-    MonthList.find((m) => m.value === month)?.label ?? month;
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
@@ -64,8 +85,9 @@ export default function TestListTable({
           <TableHead>
             <TableRow>
               <TableCell>Test</TableCell>
+              <TableCell sx={onlyWide}>Type</TableCell>
               <TableCell sx={onlyWide}>Class</TableCell>
-              <TableCell sx={onlyWide}>Month</TableCell>
+              <TableCell sx={onlyWide}>When</TableCell>
               <TableCell sx={{ minWidth: { xs: 90, sm: 190 } }}>
                 Marks entered
               </TableCell>
@@ -74,7 +96,7 @@ export default function TestListTable({
           </TableHead>
 
           <TableBody>
-            {tests.map((t) => {
+            {shown.map((t) => {
               const percent = percentOf(t.marksEntered, t.marksExpected);
               return (
                 <TableRow key={t.externalId}>
@@ -84,12 +106,21 @@ export default function TestListTable({
                       variant="caption"
                       sx={{ display: { xs: 'block', sm: 'none' } }}
                     >
-                      {t.class?.name}, {monthLabel(t.month)} {t.year}
+                      {typeLabel(t)}, {t.class?.name}, {testWhen(t)}
                     </Typography>
+                  </TableCell>
+                  <TableCell sx={onlyWide}>
+                    <Chip
+                      label={typeLabel(t)}
+                      size="small"
+                      color={t.testType === 'SESSION' ? 'primary' : 'default'}
+                      variant="outlined"
+                      sx={{ fontWeight: 600 }}
+                    />
                   </TableCell>
                   <TableCell sx={onlyWide}>{t.class?.name}</TableCell>
                   <TableCell sx={{ ...onlyWide, whiteSpace: 'nowrap' }}>
-                    {monthLabel(t.month)} {t.year}
+                    {testWhen(t)}
                   </TableCell>
                   <TableCell>
                     <Box
@@ -129,7 +160,7 @@ export default function TestListTable({
 
             {loadError && (
               <TableRow>
-                <TableCell colSpan={5}>
+                <TableCell colSpan={6}>
                   <LoadError
                     message={loadError}
                     onRetry={() => dispatch(fetchTests())}
@@ -140,7 +171,7 @@ export default function TestListTable({
 
             {!loading && !loadError && tests.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5}>
+                <TableCell colSpan={6}>
                   <EmptyState
                     title="No tests yet"
                     detail="Add this month's test to start entering marks."
@@ -148,6 +179,25 @@ export default function TestListTable({
                 </TableCell>
               </TableRow>
             )}
+
+            {!loading &&
+              !loadError &&
+              tests.length > 0 &&
+              shown.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6}>
+                    <EmptyState
+                      title="No tests match these filters"
+                      detail="Pick another class or type, or show every test."
+                      action={
+                        <Button variant="outlined" onClick={onClearFilter}>
+                          Show all tests
+                        </Button>
+                      }
+                    />
+                  </TableCell>
+                </TableRow>
+              )}
           </TableBody>
         </Table>
       </TableContainer>

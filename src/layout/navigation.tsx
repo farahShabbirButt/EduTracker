@@ -34,7 +34,7 @@ export const navGroups: { label: string; items: NavItem[] }[] = [
     ],
   },
   {
-    label: 'Monthly work',
+    label: 'Tests and marks',
     items: [
       {
         label: 'Marks entry',
@@ -47,7 +47,7 @@ export const navGroups: { label: string; items: NavItem[] }[] = [
         label: 'Tests',
         to: routes.portal.tests,
         icon: <AssignmentTurnedInOutlinedIcon />,
-        subtitle: 'Monthly tests and what each one covers',
+        subtitle: 'Monthly and session tests, and what each one covers',
       },
       {
         label: 'Conduct',

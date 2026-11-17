@@ -1,5 +1,4 @@
 import {
-  Avatar,
   Box,
   Typography,
   Button,
@@ -16,6 +15,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
+import StudentAvatar from '../../../common/StudentAvatar';
 import LoadError from '../../../common/LoadError';
 import EmptyState from '../../../common/EmptyState';
 import FilterBar from '../../../common/FilterBar';
@@ -196,18 +196,7 @@ const StudentsManagement = () => {
 
   const nameCell = (row: Student) => (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
-      <Avatar
-        sx={(theme) => ({
-          width: 36,
-          height: 36,
-          fontSize: 13,
-          fontWeight: 800,
-          bgcolor: 'background.accent',
-          color: theme.palette.studio.tintInk,
-        })}
-      >
-        {row.firstName.charAt(0).toUpperCase()}
-      </Avatar>
+      <StudentAvatar name={fullName(row)} />
       <Typography noWrap sx={{ fontWeight: 700 }}>
         {fullName(row)}
       </Typography>

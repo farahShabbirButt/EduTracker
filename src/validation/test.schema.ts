@@ -19,17 +19,11 @@ export const testFormSchema = z
       .trim()
       .min(1, 'Test name is required')
       .max(50, 'Test name must be at most 50 characters'),
-    month: z.coerce
-      .number<string | number>()
-      .int()
-      .min(1, 'Select a month')
-      .max(12, 'Select a month'),
-    year: z.coerce
-      .number<string | number>({ error: 'Enter a year' })
-      .int('Enter a whole year')
-      .min(2000, 'Enter a year from 2000')
-      // Reports can't pick a later year, so its card could never print
-      .max(new Date().getFullYear() + 1, "Year can't be past next year"),
+    // Checked below for the type picked: a monthly test needs its month and
+    // year, a session test its date
+    month: z.coerce.number<string | number>(),
+    year: z.coerce.number<string | number>(),
+    testDate: z.string(),
     classExternalId: z.string().min(1, 'Select a class'),
     testType: z.enum([TestType.MONTHLY, TestType.SESSION], {
       error: 'Select a test type',
@@ -37,6 +31,55 @@ export const testFormSchema = z
     subjects: z.array(subjectRowSchema),
   })
   .superRefine((form, ctx) => {
+    // Reports can't pick a later year, so its card could never print
+    const lastYear = new Date().getFullYear() + 1;
+    if (form.testType === TestType.SESSION) {
+      const valid =
+        /^\d{4}-\d{2}-\d{2}$/.test(form.testDate) &&
+        !Number.isNaN(Date.parse(form.testDate));
+      const year = Number(form.testDate.slice(0, 4));
+      if (!valid) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['testDate'],
+          message: 'Pick the test date',
+        });
+      } else if (year < 2000 || year > lastYear) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['testDate'],
+          message: `Pick a date from 2000 to ${lastYear}`,
+        });
+      }
+    } else {
+      if (!Number.isInteger(form.month) || form.month < 1 || form.month > 12) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['month'],
+          message: 'Select a month',
+        });
+      }
+      if (!Number.isInteger(form.year)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['year'],
+          message: 'Enter a whole year',
+        });
+      } else if (form.year < 2000) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['year'],
+          message: 'Enter a year from 2000',
+        });
+      } else if (form.year > lastYear) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['year'],
+          message: "Year can't be past next year",
+        });
+      }
+    }
+
     if (!form.classExternalId) return;
     if (!form.subjects.some((row) => row.included)) {
       ctx.addIssue({

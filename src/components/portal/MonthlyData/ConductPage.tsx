@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 import {
   Alert,
-  Avatar,
   Box,
   Button,
   Card,
@@ -33,6 +32,7 @@ import {
 } from '../../../redux/slices/conductSlice';
 import { MonthList } from '../../../config/constants';
 import EmptyState from '../../../common/EmptyState';
+import StudentAvatar from '../../../common/StudentAvatar';
 import FilterBar from '../../../common/FilterBar';
 import LabeledSelect from '../../../common/Form/LabeledSelect';
 import { useNavigationGuard } from '../../../layout/NavigationGuard';
@@ -336,18 +336,7 @@ export default function ConductPage() {
                             gap: 1.25,
                           }}
                         >
-                          <Avatar
-                            sx={(theme) => ({
-                              width: 36,
-                              height: 36,
-                              fontSize: 13,
-                              fontWeight: 800,
-                              bgcolor: 'background.accent',
-                              color: theme.palette.studio.tintInk,
-                            })}
-                          >
-                            {name.charAt(0).toUpperCase()}
-                          </Avatar>
+                          <StudentAvatar name={name} />
                           <Box>
                             <Typography sx={{ fontWeight: 700 }}>
                               {name}

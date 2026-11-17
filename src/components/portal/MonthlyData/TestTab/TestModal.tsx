@@ -37,6 +37,7 @@ const emptyForm: TestFormInput = {
   name: '',
   month: '',
   year: new Date().getFullYear(),
+  testDate: '',
   classExternalId: '',
   testType: TestType.MONTHLY,
   subjects: [],
@@ -77,6 +78,10 @@ export default function TestModal({
   });
 
   const classExternalId = useWatch({ control, name: 'classExternalId' });
+  const testType = useWatch({ control, name: 'testType' });
+  const isSession = testType === TestType.SESSION;
+  // Its marks would move to the other kind of card, so the API refuses it too
+  const typeLocked = editing && (existingTest?.marksEntered ?? 0) > 0;
   const subjectRows = useWatch({ control, name: 'subjects' });
 
   useEffect(() => {
@@ -94,6 +99,7 @@ export default function TestModal({
       name: existingTest.name,
       month: existingTest.month,
       year: existingTest.year,
+      testDate: existingTest.testDate ?? '',
       classExternalId: existingTest.class.externalId,
       testType: existingTest.testType,
       subjects: [],
@@ -181,8 +187,9 @@ export default function TestModal({
     const base = {
       name: form.name,
       testType: form.testType,
-      month: form.month,
-      year: form.year,
+      ...(form.testType === TestType.SESSION
+        ? { testDate: form.testDate }
+        : { month: form.month, year: form.year }),
       classExternalId: form.classExternalId,
       totalMarks,
     };
@@ -247,28 +254,67 @@ export default function TestModal({
       />
 
       <FormTextField
-        name="month"
+        name="testType"
         control={control}
         select
         fullWidth
-        label="Select Month"
+        label="Test type"
+        disabled={typeLocked}
+        helperText={
+          typeLocked
+            ? 'This test has marks, so its type is fixed'
+            : isSession
+              ? 'Tests sat before the final exams, printed on the session card'
+              : undefined
+        }
         sx={{ mb: 2 }}
       >
-        {MonthList.map((m) => (
-          <MenuItem key={m.value} value={m.value}>
-            {m.label}
-          </MenuItem>
-        ))}
+        <MenuItem key={TestType.MONTHLY} value={TestType.MONTHLY}>
+          Monthly
+        </MenuItem>
+        <MenuItem key={TestType.SESSION} value={TestType.SESSION}>
+          Test session
+        </MenuItem>
       </FormTextField>
 
-      <FormTextField
-        name="year"
-        control={control}
-        type="number"
-        label="Year"
-        fullWidth
-        sx={{ mb: 2 }}
-      />
+      {isSession ? (
+        <FormTextField
+          name="testDate"
+          control={control}
+          type="date"
+          label="Test date"
+          fullWidth
+          helperText="Orders the tests on the session card"
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ mb: 2 }}
+        />
+      ) : (
+        <>
+          <FormTextField
+            name="month"
+            control={control}
+            select
+            fullWidth
+            label="Select Month"
+            sx={{ mb: 2 }}
+          >
+            {MonthList.map((m) => (
+              <MenuItem key={m.value} value={m.value}>
+                {m.label}
+              </MenuItem>
+            ))}
+          </FormTextField>
+
+          <FormTextField
+            name="year"
+            control={control}
+            type="number"
+            label="Year"
+            fullWidth
+            sx={{ mb: 2 }}
+          />
+        </>
+      )}
 
       <FormTextField
         name="classExternalId"
@@ -283,23 +329,6 @@ export default function TestModal({
             {c.name}
           </MenuItem>
         ))}
-      </FormTextField>
-
-      <FormTextField
-        name="testType"
-        control={control}
-        select
-        fullWidth
-        label="Select Type"
-        sx={{ mb: 2 }}
-      >
-        <MenuItem key={TestType.MONTHLY} value={TestType.MONTHLY}>
-          Monthly
-        </MenuItem>
-        {/* No card shows session tests yet */}
-        <MenuItem key={TestType.SESSION} value={TestType.SESSION} disabled>
-          Test Session (Coming Soon)
-        </MenuItem>
       </FormTextField>
 
       {classExternalId && (
