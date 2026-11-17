@@ -8,6 +8,7 @@ import {
   FormControlLabel,
   FormGroup,
   Grid,
+  Link,
   MenuItem,
   Typography,
 } from '@mui/material';
@@ -22,6 +23,7 @@ import { fetchSubjects } from '../../../../redux/slices/subjectSlice';
 import FormPanel from '../../../../common/FormPanel';
 import FormTextField from '../../../../common/Form/FormTextField';
 import {
+  localToday,
   studentFormSchema,
   toStudentPayload,
   type StudentFormInput,
@@ -55,6 +57,10 @@ const StudentModal = ({
     error: subjectsError,
   } = useSelector((state: RootState) => state.subjects);
 
+  const schoolYearStart = useSelector(
+    (state: RootState) => state.institute.institute?.schoolYearStartDate
+  );
+
   const valuesFrom = (student?: Partial<Student>): StudentFormInput => ({
     firstName: student?.firstName ?? '',
     lastName: student?.lastName ?? '',
@@ -63,6 +69,8 @@ const StudentModal = ({
     classId: student?.class?.externalId ?? defaultClassId ?? '', // Using externalId for class selection
     contactNo: student?.contactNo ?? '',
     email: student?.email ?? '',
+    // A new admission joins today; the school year start is one click away
+    joinedOn: student?.joinedOn ?? localToday(),
     electiveSubjectIds:
       student?.subjects
         ?.filter((s) => s.subjectType === 'ELECTIVE')
@@ -73,7 +81,8 @@ const StudentModal = ({
     control,
     handleSubmit,
     reset,
-    formState: { isSubmitting },
+    setValue,
+    formState: { isSubmitting, dirtyFields },
   } = useForm<StudentFormInput, unknown, StudentFormOutput>({
     resolver: zodResolver(studentFormSchema),
     defaultValues: valuesFrom(initial),
@@ -95,6 +104,20 @@ const StudentModal = ({
   }, [open, initial]);
 
   const selectedClassId = useWatch({ control, name: 'classId' });
+  const joinedOn = useWatch({ control, name: 'joinedOn' });
+
+  // Moving class means joining the new one today, unless a date is picked
+  const movedClass =
+    mode === 'edit' && selectedClassId !== initial?.class?.externalId;
+  useEffect(() => {
+    if (mode === 'edit' && !dirtyFields.joinedOn) {
+      setValue(
+        'joinedOn',
+        movedClass ? localToday() : (initial?.joinedOn ?? localToday())
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [movedClass]);
   const subjectsReady = !subjectsLoading && !subjectsError;
   const classElectives = subjects.filter(
     (s) =>
@@ -104,7 +127,17 @@ const StudentModal = ({
 
   // Only electives of the chosen class go out, so changing class drops the old ones
   const toPayload = (values: StudentFormOutput): StudentFormValues => {
-    const { electiveSubjectIds, ...rest } = toStudentPayload(values);
+    const {
+      electiveSubjectIds,
+      joinedOn: day,
+      ...base
+    } = toStudentPayload(values);
+    // On edit the date goes out when the class changed (the form shows today, or the date
+    // picked, which may equal the saved one) or when it differs from the saved date
+    const rest =
+      mode === 'create' || movedClass || day !== initial?.joinedOn
+        ? { ...base, joinedOn: day }
+        : base;
     return subjectsReady
       ? {
           ...rest,
@@ -184,6 +217,43 @@ const StudentModal = ({
                   </MenuItem>
                 ))}
               </FormTextField>
+            </Grid>
+            <Grid size={12}>
+              <FormTextField
+                name="joinedOn"
+                control={control}
+                type="date"
+                label="Joined class on"
+                required
+                fullWidth
+                slotProps={{
+                  inputLabel: { shrink: true },
+                  htmlInput: { max: localToday() },
+                }}
+                helperText={
+                  <>
+                    Tests before this date aren't owed.
+                    {schoolYearStart && joinedOn !== schoolYearStart && (
+                      <>
+                        {' '}
+                        <Link
+                          component="button"
+                          type="button"
+                          onClick={() =>
+                            setValue('joinedOn', schoolYearStart, {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            })
+                          }
+                          sx={{ verticalAlign: 'baseline' }}
+                        >
+                          Use school year start
+                        </Link>
+                      </>
+                    )}
+                  </>
+                }
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <FormTextField
