@@ -6,6 +6,8 @@ import {
   type ApiResponse,
 } from '../../services/apiClient';
 import { SUBJECT_ROUTES, SUBJECT_CLASS_ROUTES } from '../../services/apiRoutes';
+import type { SheetRow } from '../../common/import/readSheet';
+import type { ImportResult } from '../../common/import/importTypes';
 import type {
   ApiSubject,
   SubjectFormValues,
@@ -139,6 +141,40 @@ export const assignSubjectsToClass = createAsyncThunk(
       );
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to assign subjects'));
+    }
+  }
+);
+
+export type SubjectImportField =
+  | 'name'
+  | 'subjectType'
+  | 'maxMarks'
+  | 'classes';
+
+// The preview (dryRun) and the save both go here. A write, so never aborted.
+// After a save the screen refetches, because existing subjects may gain classes.
+export const importSubjects = createAsyncThunk(
+  'subjects/import',
+  async (
+    { rows, dryRun }: { rows: SheetRow<SubjectImportField>[]; dryRun: boolean },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await apiClient.post<
+        ApiResponse<'subjectImport', ImportResult<ApiSubject>>
+      >(SUBJECT_ROUTES.IMPORT_SUBJECTS, {
+        dryRun,
+        rows: rows.map((r) => ({ row: r.row, ...r.values })),
+      });
+      return {
+        result: response[response.keyName],
+        message:
+          response.userMessage || response.message || 'Subjects imported',
+      };
+    } catch (error) {
+      return rejectWithValue(
+        messageFrom(error, "The file couldn't be checked")
+      );
     }
   }
 );

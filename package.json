@@ -19,6 +19,7 @@
     "@mui/material": "^7.2.0",
     "@mui/x-data-grid": "^8.7.0",
     "@reduxjs/toolkit": "^2.8.2",
+    "papaparse": "5.7.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.91.0",
@@ -26,12 +27,15 @@
     "react-router-dom": "^7.6.3",
     "react-to-print": "^3.1.1",
     "react-toastify": "^11.0.5",
+    "read-excel-file": "9.3.12",
     "redux": "^5.0.1",
+    "write-excel-file": "4.1.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
     "@types/node": "^24.0.10",
+    "@types/papaparse": "5.5.2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.5.2",

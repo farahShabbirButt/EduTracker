@@ -9,6 +9,7 @@ import {
   TextField,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
@@ -20,6 +21,15 @@ import {
   removeSubject,
 } from '../../../redux/slices/subjectSlice';
 import { fetchClasses } from '../../../redux/slices/classSlice';
+import { fetchDashboard } from '../../../redux/slices/dashboardSlice';
+import {
+  importSubjects,
+  type SubjectImportField,
+} from '../../../redux/slices/subjectSlice';
+import ImportPanel from '../../../common/import/ImportPanel';
+import useImportParam from '../../../common/import/useImportParam';
+import type { ImportColumn } from '../../../common/import/readSheet';
+import type { ImportCheck } from '../../../common/import/importTypes';
 import type { ApiSubject, SubjectFormValues } from './@types/subject.d';
 import SubjectListing from './Partial/SubjectsListing';
 import SubjectDialog from './Partial/SubjectsDialog';
@@ -28,6 +38,34 @@ import GradeBoundaries from './Partial/GradeBoundries';
 import DeleteDialog from '../../../common/Dialogs/DeleteDialog/DeleteDialog';
 import LoadError from '../../../common/LoadError';
 import LabeledSelect from '../../../common/Form/LabeledSelect';
+
+const IMPORT_COLUMNS: ImportColumn<SubjectImportField>[] = [
+  {
+    field: 'name',
+    label: 'Subject',
+    aliases: ['Subject name', 'Name'],
+    required: true,
+    example: 'English',
+  },
+  {
+    field: 'subjectType',
+    label: 'Type',
+    aliases: ['Subject type', 'Compulsory or elective'],
+    example: 'Compulsory',
+  },
+  {
+    field: 'maxMarks',
+    label: 'Max marks',
+    aliases: ['Maximum marks', 'Total marks', 'Total', 'Marks'],
+    example: '100',
+  },
+  {
+    field: 'classes',
+    label: 'Classes',
+    aliases: ['Class', 'Offered in'],
+    example: '9th, 10th',
+  },
+];
 
 export default function SubjectsManagement() {
   const dispatch = useDispatch<AppDispatch>();
@@ -45,6 +83,14 @@ export default function SubjectsManagement() {
     null
   );
   const [openAssign, setOpenAssign] = React.useState(false);
+  const [importing, setImporting] = useImportParam();
+
+  const checkImport: ImportCheck<SubjectImportField> = async (rows, dryRun) => {
+    const result = await dispatch(importSubjects({ rows, dryRun }));
+    return importSubjects.fulfilled.match(result)
+      ? { ok: true, ...result.payload }
+      : { ok: false, message: result.payload as string };
+  };
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') === 'grades' ? 'grades' : 'subjects';
 
@@ -160,6 +206,14 @@ export default function SubjectsManagement() {
             </LabeledSelect>
             <Button
               variant="outlined"
+              startIcon={<UploadFileIcon />}
+              sx={{ flex: 'none' }}
+              onClick={() => setImporting(true)}
+            >
+              Import
+            </Button>
+            <Button
+              variant="outlined"
               sx={{ flex: 'none' }}
               onClick={() => setOpenAssign(true)}
             >
@@ -219,6 +273,23 @@ export default function SubjectsManagement() {
           setActiveSubject(null);
         }}
         onConfirm={confirmDelete}
+      />
+
+      <ImportPanel
+        open={importing}
+        onClose={() => setImporting(false)}
+        title="Import subjects"
+        noun={['subject', 'subjects']}
+        columns={IMPORT_COLUMNS}
+        templateName="Subjects template.xlsx"
+        intro="Add subjects from an Excel or CSV file, one subject per row, with the classes that take it separated by commas. Students in those classes get the compulsory subjects. A subject already in the app keeps its type and max marks, and is added to any new classes listed."
+        check={checkImport}
+        onImported={(message) => {
+          toast.success(message);
+          setImporting(false);
+          dispatch(fetchSubjects());
+          dispatch(fetchDashboard());
+        }}
       />
 
       {/* Assign */}
