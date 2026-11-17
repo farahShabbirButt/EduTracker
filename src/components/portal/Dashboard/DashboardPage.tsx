@@ -193,14 +193,31 @@ export default function DashboardPage() {
   const percent = percentOf(marks.entered, marks.expected);
   const nothingDue = tests.length > 0 && marks.expected === 0;
 
-  const steps = [
-    { label: 'Add classes', done: setup.classes, to: routes.portal.classes },
+  // importTo opens that screen's Excel or CSV import
+  const steps: {
+    label: string;
+    done: boolean;
+    to: string;
+    importTo?: string;
+  }[] = [
+    {
+      label: 'Add classes',
+      done: setup.classes,
+      to: routes.portal.classes,
+      importTo: `${routes.portal.classes}?import=1`,
+    },
     {
       label: 'Add subjects and assign them',
       done: setup.subjects,
       to: routes.portal.subjects,
+      importTo: `${routes.portal.subjects}?import=1`,
     },
-    { label: 'Add students', done: setup.students, to: routes.portal.student },
+    {
+      label: 'Add students',
+      done: setup.students,
+      to: routes.portal.student,
+      importTo: `${routes.portal.student}?import=1`,
+    },
     {
       label: 'Set grade boundaries',
       done: setup.gradeBands,
@@ -534,9 +551,19 @@ export default function DashboardPage() {
                       {step.label}
                     </Typography>
                   ) : (
-                    <Link component={RouterLink} to={step.to}>
-                      {step.label}
-                    </Link>
+                    <Typography component="span">
+                      <Link component={RouterLink} to={step.to}>
+                        {step.label}
+                      </Link>
+                      {step.importTo && (
+                        <>
+                          {' or '}
+                          <Link component={RouterLink} to={step.importTo}>
+                            import from Excel
+                          </Link>
+                        </>
+                      )}
+                    </Typography>
                   )}
                 </Box>
               ))}

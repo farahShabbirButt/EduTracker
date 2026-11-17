@@ -36,7 +36,22 @@ export const studentFormSchema = z.object({
     .trim()
     .pipe(z.union([z.literal(''), z.email('Enter a valid email address')])),
   electiveSubjectIds: z.array(z.string()),
+  // When they joined the class: tests before it aren't owed
+  joinedOn: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Pick the date they joined the class')
+    .refine((day) => day <= localToday(), {
+      message: "Joined class on can't be in the future",
+    }),
 });
+
+// Today on this computer, as a date box shows it (YYYY-MM-DD)
+export const localToday = () => {
+  const d = new Date();
+  return [d.getFullYear(), d.getMonth() + 1, d.getDate()]
+    .map((n) => String(n).padStart(2, '0'))
+    .join('-');
+};
 
 export type StudentFormInput = z.input<typeof studentFormSchema>;
 export type StudentFormOutput = z.output<typeof studentFormSchema>;
