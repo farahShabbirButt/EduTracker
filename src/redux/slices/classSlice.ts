@@ -6,6 +6,8 @@ import {
   type ApiResponse,
 } from '../../services/apiClient';
 import { CLASS_ROUTES } from '../../services/apiRoutes';
+import type { SheetRow } from '../../common/import/readSheet';
+import type { ImportResult } from '../../common/import/importTypes';
 import type {
   Class,
   ClassFormValues,
@@ -115,6 +117,32 @@ export const removeClass = createAsyncThunk(
   }
 );
 
+// The preview (dryRun) and the save both go here. A write, so never aborted.
+export const importClasses = createAsyncThunk(
+  'classes/import',
+  async (
+    { rows, dryRun }: { rows: SheetRow<'name'>[]; dryRun: boolean },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await apiClient.post<
+        ApiResponse<'classImport', ImportResult<Class>>
+      >(CLASS_ROUTES.IMPORT_CLASSES, {
+        dryRun,
+        rows: rows.map((r) => ({ row: r.row, name: r.values.name })),
+      });
+      return {
+        result: response[response.keyName],
+        message: response.userMessage || response.message || 'Classes imported',
+      };
+    } catch (error) {
+      return rejectWithValue(
+        messageFrom(error, "The file couldn't be checked")
+      );
+    }
+  }
+);
+
 const classSlice = createSlice({
   name: 'classes',
   initialState,
@@ -141,6 +169,10 @@ const classSlice = createSlice({
       })
       .addCase(addClass.fulfilled, (state, action) => {
         state.classes.unshift(action.payload.class);
+      })
+      .addCase(importClasses.fulfilled, (state, action) => {
+        const created = action.payload.result.created ?? [];
+        state.classes.unshift(...created.slice().reverse());
       })
       .addCase(addClass.rejected, (state, action) => {
         state.error = (action.payload as string) || 'Failed to add class';

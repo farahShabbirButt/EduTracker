@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button, Stack, TextField } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import type { RootState, AppDispatch } from '../../../redux/store';
@@ -9,7 +10,12 @@ import {
   addClass,
   editClass,
   removeClass,
+  importClasses,
 } from '../../../redux/slices/classSlice';
+import ImportPanel from '../../../common/import/ImportPanel';
+import useImportParam from '../../../common/import/useImportParam';
+import type { ImportColumn } from '../../../common/import/readSheet';
+import type { ImportCheck } from '../../../common/import/importTypes';
 import { fetchDashboard } from '../../../redux/slices/dashboardSlice';
 import { fetchStudents } from '../../../redux/slices/studentSlice';
 import {
@@ -22,6 +28,16 @@ import ClassListing from './Partials/ClassListing';
 import ClassDialog from './Partials/ClassDialog';
 import LoadError from '../../../common/LoadError';
 import DeleteDialog from '../../../common/Dialogs/DeleteDialog/DeleteDialog';
+
+const IMPORT_COLUMNS: ImportColumn<'name'>[] = [
+  {
+    field: 'name',
+    label: 'Class name',
+    aliases: ['Class', 'Grade', 'Name'],
+    required: true,
+    example: '9th',
+  },
+];
 
 export default function ClassesManagement() {
   const dispatch = useDispatch<AppDispatch>();
@@ -44,6 +60,14 @@ export default function ClassesManagement() {
   const [openDialog, setOpenDialog] = useState(false);
   const [editingClass, setEditingClass] = useState<Class | null>(null);
   const [classToDelete, setClassToDelete] = useState<Class | null>(null);
+  const [importing, setImporting] = useImportParam();
+
+  const checkImport: ImportCheck<'name'> = async (rows, dryRun) => {
+    const result = await dispatch(importClasses({ rows, dryRun }));
+    return importClasses.fulfilled.match(result)
+      ? { ok: true, ...result.payload }
+      : { ok: false, message: result.payload as string };
+  };
 
   useEffect(() => {
     dispatch(fetchClasses());
@@ -138,6 +162,14 @@ export default function ClassesManagement() {
           onChange={(e) => setSearch(e.target.value)}
         />
         <Button
+          variant="outlined"
+          startIcon={<UploadFileIcon />}
+          onClick={() => setImporting(true)}
+          sx={{ flex: 'none' }}
+        >
+          Import
+        </Button>
+        <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleCreate}
@@ -206,6 +238,22 @@ export default function ClassesManagement() {
         subjectsLoading={subjectsLoading}
         onClose={() => setOpenDialog(false)}
         onSave={handleSave}
+      />
+
+      <ImportPanel
+        open={importing}
+        onClose={() => setImporting(false)}
+        title="Import classes"
+        noun={['class', 'classes']}
+        columns={IMPORT_COLUMNS}
+        templateName="Classes template.xlsx"
+        intro="Add many classes at once from an Excel or CSV file, one class per row. Classes already in the app are skipped."
+        check={checkImport}
+        onImported={(message) => {
+          toast.success(message);
+          setImporting(false);
+          dispatch(fetchDashboard());
+        }}
       />
 
       <DeleteDialog

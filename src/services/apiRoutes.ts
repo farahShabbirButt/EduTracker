@@ -9,6 +9,7 @@ export const SUBJECT_ROUTES = {
   CREATE_SUBJECT: '/subject',
   UPDATE_SUBJECT: (id: string) => `/subject/${id}`,
   GET_ALL_SUBJECTS: '/subject',
+  IMPORT_SUBJECTS: '/subject/import',
   DELETE_SUBJECT: (id: string) => `/subject/${id}`,
 };
 
@@ -24,6 +25,7 @@ export const CLASS_ROUTES = {
   CREATE_CLASS: '/class',
   UPDATE_CLASS: (id: string) => `/class/${id}`,
   GET_ALL_CLASSES: '/class',
+  IMPORT_CLASSES: '/class/import',
   DELETE_CLASS: (id: string) => `/class/${id}`,
 };
 
