@@ -34,6 +34,7 @@ export const TEST_ROUTES = {
   CREATE_TEST: '/test',
   UPDATE_TEST: (id: string) => `/test/${id}`,
   GET_ALL_TESTS: '/test',
+  IMPORT_TESTS: '/test/import',
   DELETE_TEST: (id: string) => `/test/${id}`,
   GET_TEST_SUBJECTS: (id: string) => `/test/${id}/subjects`,
 };
