@@ -6,6 +6,8 @@ import {
   type ApiResponse,
 } from '../../services/apiClient';
 import { TEST_ROUTES } from '../../services/apiRoutes';
+import type { SheetRow } from '../../common/import/readSheet';
+import type { ImportResult } from '../../common/import/importTypes';
 import type {
   ApiTest,
   ApiTestSubject,
@@ -144,6 +146,57 @@ export const fetchTestSubjects = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         messageFrom(error, 'Failed to fetch test subjects')
+      );
+    }
+  }
+);
+
+export type TestImportField =
+  | 'className'
+  | 'name'
+  | 'testType'
+  | 'month'
+  | 'year'
+  | 'testDate'
+  | 'subject'
+  | 'maxMarks';
+
+// The preview (dryRun) and the save both go here. A write, so never aborted.
+// After a save the screen refetches, so the list gets each test's progress.
+export const importTests = createAsyncThunk(
+  'tests/import',
+  async (
+    {
+      rows,
+      dryRun,
+      classId,
+    }: {
+      rows: SheetRow<TestImportField>[];
+      dryRun: boolean;
+      // One class for every row, or undefined to read each row's Class
+      classId?: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await apiClient.post<
+        ApiResponse<'testImport', ImportResult<ApiTest>>
+      >(TEST_ROUTES.IMPORT_TESTS, {
+        dryRun,
+        classId,
+        rows: rows.map((r) => ({
+          row: r.row,
+          ...r.values,
+          ...(classId && { className: undefined }),
+        })),
+      });
+      return {
+        result: response[response.keyName],
+        message: response.userMessage || response.message || 'Tests imported',
+      };
+    } catch (error) {
+      return rejectWithValue(
+        messageFrom(error, "The file couldn't be checked")
       );
     }
   }

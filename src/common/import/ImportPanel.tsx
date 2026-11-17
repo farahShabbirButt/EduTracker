@@ -225,12 +225,14 @@ export default function ImportPanel<F extends string>({
   };
 
   const counts = result?.counts;
+  // What Import makes: one per new row, or the server's count when a thing spans rows
+  const making = result?.toCreate ?? counts?.new ?? 0;
   const shown =
     result?.rows.filter((r) => !problemsOnly || r.status === 'problem') ?? [];
   const canImport =
     !!counts &&
     counts.problem === 0 &&
-    counts.new > 0 &&
+    making > 0 &&
     !checking &&
     !importing &&
     ready;
@@ -361,12 +363,15 @@ export default function ImportPanel<F extends string>({
                   Fix the rows with problems in the file and choose it again.
                   Nothing is imported while any row has a problem.
                 </Alert>
-              ) : counts.new === 0 ? (
+              ) : making === 0 ? (
                 <Alert severity="info">
                   Every {noun[0]} in this file is already there.
                 </Alert>
               ) : (
                 <Typography variant="body2" color="text.secondary">
+                  {result.toCreate !== undefined &&
+                    result.toCreate !== counts.new &&
+                    `These ${counts.new} new rows make ${making} ${making === 1 ? noun[0] : noun[1]}. `}
                   Nothing is saved until you press Import.
                 </Typography>
               )}
@@ -429,8 +434,8 @@ export default function ImportPanel<F extends string>({
           Cancel
         </Button>
         <Button variant="contained" onClick={runImport} disabled={!canImport}>
-          {counts && counts.new > 0
-            ? `Import ${counts.new} ${counts.new === 1 ? noun[0] : noun[1]}`
+          {making > 0
+            ? `Import ${making} ${making === 1 ? noun[0] : noun[1]}`
             : 'Import'}
         </Button>
       </DialogActions>

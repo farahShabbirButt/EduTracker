@@ -15,6 +15,8 @@ export interface ImportResult<T = unknown> {
   counts: Record<ImportStatus, number>;
   rows: ImportRowResult[];
   created?: T[];
+  // How many things the new rows make, when a thing spans rows (a test has a row per subject)
+  toCreate?: number;
 }
 
 // What an import screen gives the panel: send the rows, as a preview or for real

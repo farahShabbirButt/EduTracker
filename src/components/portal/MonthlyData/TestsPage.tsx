@@ -3,6 +3,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 import { Box, Button, Card, MenuItem, Stack } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import { toast } from 'react-toastify';
+import ImportTests from './TestTab/ImportTests';
+import useImportParam from '../../../common/import/useImportParam';
+import { fetchTests } from '../../../redux/slices/testSlice';
+import { fetchDashboard } from '../../../redux/slices/dashboardSlice';
 import TestListTable, { type TestFilter } from './TestTab/TestListTable';
 import TestModal from './TestTab/TestModal';
 import FormPanel from '../../../common/FormPanel';
@@ -19,6 +25,7 @@ export default function TestsPage() {
   const classes = useSelector((state: RootState) => state.classes.classes);
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [editTestId, setEditTestId] = useState<string | null>(null);
+  const [importing, setImporting] = useImportParam();
 
   // Kept in the address, so going back from Marks entry keeps them
   const [searchParams, setSearchParams] = useSearchParams();
@@ -97,6 +104,14 @@ export default function TestsPage() {
         </LabeledSelect>
         <Box sx={{ flex: 1, display: { xs: 'none', sm: 'block' } }} />
         <Button
+          variant="outlined"
+          startIcon={<UploadFileIcon />}
+          onClick={() => setImporting(true)}
+          sx={{ flex: 'none' }}
+        >
+          Import
+        </Button>
+        <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleAddTest}
@@ -112,6 +127,18 @@ export default function TestsPage() {
           onClearFilter={() => setSearchParams({}, { replace: true })}
         />
       </Card>
+
+      <ImportTests
+        open={importing}
+        onClose={() => setImporting(false)}
+        defaultClassId={classId === 'all' ? undefined : classId}
+        onImported={(message) => {
+          toast.success(message);
+          setImporting(false);
+          dispatch(fetchTests());
+          dispatch(fetchDashboard());
+        }}
+      />
 
       <FormPanel open={openCreateModal} label="Test details">
         <Box sx={{ p: 3, overflow: 'auto' }}>
