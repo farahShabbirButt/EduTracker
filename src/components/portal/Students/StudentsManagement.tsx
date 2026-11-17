@@ -39,6 +39,10 @@ import { useSearchParams } from 'react-router-dom';
 import DeleteDialog from '../../../common/Dialogs/DeleteDialog/DeleteDialog';
 
 import AddIcon from '@mui/icons-material/Add';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import ImportStudents from './Partials/ImportStudents';
+import useImportParam from '../../../common/import/useImportParam';
+import { fetchDashboard } from '../../../redux/slices/dashboardSlice';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import SearchIcon from '@mui/icons-material/Search';
@@ -81,6 +85,7 @@ const StudentsManagement = () => {
   const picked = searchParams.get('student');
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState<string>('All');
+  const [importing, setImporting] = useImportParam();
   // Load data on mount
   useEffect(() => {
     dispatch(fetchStudents());
@@ -318,6 +323,14 @@ const StudentsManagement = () => {
           ))}
         </LabeledSelect>
         <Button
+          variant="outlined"
+          startIcon={<UploadFileIcon />}
+          onClick={() => setImporting(true)}
+          sx={{ flex: 'none' }}
+        >
+          Import
+        </Button>
+        <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={openCreate}
@@ -420,6 +433,18 @@ const StudentsManagement = () => {
         mode={editingRow ? 'edit' : 'create'}
         initial={editingRow ?? undefined}
         defaultClassId={classFilter === 'All' ? undefined : classFilter}
+      />
+
+      <ImportStudents
+        open={importing}
+        onClose={() => setImporting(false)}
+        defaultClassId={classFilter === 'All' ? undefined : classFilter}
+        onImported={(message) => {
+          toast.success(message);
+          setImporting(false);
+          dispatch(fetchStudents());
+          dispatch(fetchDashboard());
+        }}
       />
 
       {/* Delete confirm */}

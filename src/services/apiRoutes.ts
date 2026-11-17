@@ -2,6 +2,7 @@ export const STUDENT_ROUTES = {
   CREATE_STUDENT: '/student',
   UPDATE_STUDENT: (id: string) => `/student/${id}`,
   GET_ALL_STUDENTS: '/student',
+  IMPORT_STUDENTS: '/student/import',
   DELETE_STUDENT: (id: string) => `/student/${id}`,
 };
 

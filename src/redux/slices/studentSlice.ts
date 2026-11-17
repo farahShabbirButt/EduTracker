@@ -6,6 +6,8 @@ import {
   type ApiResponse,
 } from '../../services/apiClient';
 import { STUDENT_ROUTES } from '../../services/apiRoutes';
+import type { SheetRow } from '../../common/import/readSheet';
+import type { ImportResult } from '../../common/import/importTypes';
 import type {
   Student,
   StudentFormValues,
@@ -114,6 +116,63 @@ export const removeStudent = createAsyncThunk(
       };
     } catch (error) {
       return rejectWithValue(messageFrom(error, 'Failed to delete student'));
+    }
+  }
+);
+
+export type StudentImportField =
+  | 'className'
+  | 'rollNumber'
+  | 'firstName'
+  | 'lastName'
+  | 'fatherName'
+  | 'contactNo'
+  | 'email'
+  | 'electives'
+  | 'joinedOn';
+
+// The preview (dryRun) and the save both go here. A write, so never aborted.
+export const importStudents = createAsyncThunk(
+  'students/import',
+  async (
+    {
+      rows,
+      dryRun,
+      classId,
+      joinedOn,
+    }: {
+      rows: SheetRow<StudentImportField>[];
+      dryRun: boolean;
+      // One class for every row, or undefined to read each row's Class
+      classId?: string;
+      // For rows without their own Joined on
+      joinedOn: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await apiClient.post<
+        ApiResponse<'studentImport', ImportResult<Student>>
+      >(STUDENT_ROUTES.IMPORT_STUDENTS, {
+        dryRun,
+        classId,
+        joinedOn,
+        rows: rows.map((r) => ({
+          row: r.row,
+          ...r.values,
+          // The picked class wins; don't send a column that isn't used
+          ...(classId && { className: undefined }),
+        })),
+      });
+      return {
+        result: response[response.keyName],
+        message:
+          response.userMessage || response.message || 'Students imported',
+      };
+    } catch (error) {
+      return rejectWithValue(
+        messageFrom(error, "The file couldn't be checked")
+      );
     }
   }
 );
