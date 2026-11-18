@@ -27,7 +27,7 @@ The backend returns `response.userMessage` / `response.message` on both success 
 
 ## Env
 
-`.env` requires `VITE_API_BASE_URL` (read via `config/env.ts`). There is no `.env.example` committed — if you set up onboarding, add one with `VITE_API_BASE_URL=http://localhost:5000/edu-tracker/api/v1`.
+`.env` sets `VITE_API_BASE_URL` (read via `config/env.ts`); see `.env.example`. Unset, it is `/edu-tracker/api/v1` on the same address, which is how production works (the backend serves this app). A request waiting over 4 s shows `common/SlowServerNotice` (the free host sleeps when idle).
 
 ## Commit style
 

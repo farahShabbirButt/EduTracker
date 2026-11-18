@@ -12,6 +12,7 @@ import store from './redux/store.ts';
 import { ThemeContextProvider } from './theme/ThemeContextProvider.tsx';
 import { apiClient } from './services/apiClient.ts';
 import { sessionExpired } from './redux/slices/authSlice.ts';
+import SlowServerNotice from './common/SlowServerNotice.tsx';
 
 // Registered here rather than inside apiClient to avoid an import cycle.
 apiClient.setOnUnauthorized(() => {
@@ -27,6 +28,7 @@ createRoot(document.getElementById('root')!).render(
     <ThemeContextProvider>
       <Provider store={store}>
         <RouterProvider router={router} />
+        <SlowServerNotice />
         <ToastContainer
           position="bottom-right"
           autoClose={3000}

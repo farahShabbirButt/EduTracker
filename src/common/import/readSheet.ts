@@ -35,6 +35,20 @@ export interface OpenedFile {
 
 export class SheetReadError extends Error {}
 
+// The file libraries load on first use. If EduTracker was updated after this page opened,
+// last version's files are gone, so the load fails; reloading picks up the new version.
+const load = async <T>(loader: () => Promise<T>): Promise<T> => {
+  try {
+    return await loader();
+  } catch {
+    throw new SheetReadError(
+      navigator.onLine
+        ? 'Part of EduTracker could not load, perhaps because it was updated since this page opened. Reload the page and try again'
+        : 'You seem to be offline. Check the internet connection and try again'
+    );
+  }
+};
+
 // Headings are matched without caring about case, spaces or punctuation
 const headingKey = (value: string) =>
   value.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -61,7 +75,7 @@ export async function openSheetFile(file: File): Promise<OpenedFile> {
   const name = file.name.toLowerCase();
 
   if (name.endsWith('.csv')) {
-    const { default: Papa } = await import('papaparse');
+    const { default: Papa } = await load(() => import('papaparse'));
     const text = await file.text();
     const parsed = Papa.parse<string[]>(text.replace(/^\uFEFF/, ''), {
       skipEmptyLines: false,
@@ -71,7 +85,9 @@ export async function openSheetFile(file: File): Promise<OpenedFile> {
   }
 
   if (name.endsWith('.xlsx')) {
-    const { default: readExcelFile } = await import('read-excel-file/browser');
+    const { default: readExcelFile } = await load(
+      () => import('read-excel-file/browser')
+    );
     let sheets;
     try {
       sheets = await readExcelFile(file);
@@ -178,7 +194,9 @@ export async function downloadTemplate(
   columns: ImportColumn[],
   fileName: string
 ) {
-  const { default: writeExcelFile } = await import('write-excel-file/browser');
+  const { default: writeExcelFile } = await load(
+    () => import('write-excel-file/browser')
+  );
   await writeExcelFile([
     columns.map((c) => ({ value: c.label, fontWeight: 'bold' as const })),
     columns.map((c) => ({ value: c.example ?? '', type: String })),
