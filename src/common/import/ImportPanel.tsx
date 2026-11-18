@@ -255,8 +255,12 @@ export default function ImportPanel<F extends string>({
               component="button"
               type="button"
               onClick={() =>
-                downloadTemplate(columns, templateName).catch(() =>
-                  toast.error("The template couldn't be made. Try again")
+                downloadTemplate(columns, templateName).catch((error) =>
+                  toast.error(
+                    error instanceof SheetReadError
+                      ? error.message
+                      : "The template couldn't be made. Try again"
+                  )
                 )
               }
               sx={{ verticalAlign: 'baseline' }}
